@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
-from base import Base
+from database.models.base import Base
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
