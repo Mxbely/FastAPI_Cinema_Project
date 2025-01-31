@@ -8,6 +8,15 @@ from database.models.movies import (
     MovieDirectors,
     MovieStars
 )
+from database.models.accounts import (
+    User,
+    UserGroup,
+    UserGroupEnum,
+    ActivationToken,
+    PasswordResetToken,
+    RefreshToken,
+    UserProfile
+)
 from database.models.base import Base
 
 from database.session_postgresql import (

@@ -163,7 +163,7 @@ class Movie(Base):
     )
 
     __table_args__ = (
-        UniqueConstraint("name", "year", "time", name="unique_movie_constraint")
+        UniqueConstraint("name", "year", "time", name="unique_movie_constraint"),
     )
 
     def __repr__(self):
