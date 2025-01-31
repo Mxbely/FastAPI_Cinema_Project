@@ -17,6 +17,7 @@ from database.models.accounts import (
     RefreshToken,
     UserProfile
 )
+from database.models.shoping_cart import Cart, CartItem
 from database.models.base import Base
 
 from database.session_postgresql import (
