@@ -22,9 +22,6 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
-# poetry
-poetry.lock
-
 # Celery stuff
 celerybeat-schedule
 celerybeat.pid
@@ -43,5 +40,7 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+# alembic
+*versions
 
 .idea/
