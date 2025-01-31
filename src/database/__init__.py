@@ -18,6 +18,8 @@ from database.models.accounts import (
     UserProfile
 )
 from database.models.shoping_cart import Cart, CartItem
+from database.models.orders import Order, OrderItem
+from database.models.payments import Payment, PaymentItem, PaymentStatusEnum
 from database.models.base import Base
 
 from database.session_postgresql import (
