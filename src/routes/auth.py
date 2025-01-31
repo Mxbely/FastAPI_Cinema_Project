@@ -7,7 +7,6 @@ from app.schemas import UserCreate, UserLogin, Token, PasswordResetRequest, Pass
 from app.auth import create_access_token, create_refresh_token, get_current_user
 from app.email_utils import send_activation_email, send_password_reset_email
 from app.security import get_password_hash, verify_password
-import uuid
 from datetime import datetime, timedelta
 from app.auth import get_current_user_admin
 import uuid
@@ -124,8 +123,12 @@ def logout(current_user: User = Depends(get_current_user), db: Session = Depends
 
 
 @router.post("/admin/change-group/")
-def change_user_group(update_data: UserUpdateGroup, current_admin: User = Depends(get_current_user_admin),
-                      db: Session = Depends(get_db)):
+def change_user_group(
+        update_data: UserUpdateGroup,
+        current_admin: User = Depends(get_current_user_admin),
+        db: Session = Depends(get_db)
+):
+
     user = db.query(User).filter(User.id == update_data.user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -140,7 +143,12 @@ def change_user_group(update_data: UserUpdateGroup, current_admin: User = Depend
 
 
 @router.post("/admin/activate-user/")
-def activate_user(user_id: int, current_admin: User = Depends(get_current_user_admin), db: Session = Depends(get_db)):
+def activate_user(
+        user_id: int,
+        current_admin: User = Depends(get_current_user_admin),
+        db: Session = Depends(get_db)
+):
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
