@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 from enum import Enum
 
 from sqlalchemy import String, DateTime, DECIMAL, Integer, ForeignKey
@@ -22,10 +22,10 @@ class Order(Base):
     user_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-    created_at: Mapped[date] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=datetime.now
     )
-    status: Mapped[str] = mapped_column(
+    status: Mapped[OrderStatusEnum] = mapped_column(
         String(50), nullable=False, default=OrderStatusEnum.PENDING.value
     )
     total_amount: Mapped[float | None] = mapped_column(DECIMAL(10, 2))
@@ -43,10 +43,10 @@ class OrderItem(Base):
         Integer, primary_key=True, autoincrement=True, nullable=False
     )
     order_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("orders.id"), nullable=False
+        Integer, ForeignKey("orders.id", ondelete="CASCADE"), nullable=False
     )
     movie_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("movies.id"), nullable=False
+        Integer, ForeignKey("movies.id", ondelete="CASCADE"), nullable=False
     )
     price_at_order: Mapped[float] = mapped_column(DECIMAL(10, 2), nullable=False)
 
