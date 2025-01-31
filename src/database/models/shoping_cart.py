@@ -12,9 +12,6 @@ from sqlalchemy.orm import (
 )
 from database.models.base import Base
 
-from src.database.models.accounts import User
-from src.database.models.movies import Movie
-
 
 class Cart(Base):
     __tablename__ = "carts"
