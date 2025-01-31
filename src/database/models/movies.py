@@ -3,8 +3,21 @@ from uuid import uuid4, UUID
 
 
 from database.models.base import Base
-from sqlalchemy import String, Text, DECIMAL, ForeignKey, Float, UniqueConstraint, Table, Column
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import (
+    String,
+    Text,
+    DECIMAL,
+    ForeignKey,
+    Float,
+    UniqueConstraint,
+    Table,
+    Column
+)
+from sqlalchemy.orm import (
+    Mapped,
+    mapped_column,
+    relationship
+)
 
 
 MovieGenres = Table(
