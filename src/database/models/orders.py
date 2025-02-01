@@ -4,9 +4,9 @@ from enum import Enum
 from sqlalchemy import DECIMAL, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from database.models.accounts import User
 from database.models.base import Base
 from database.models.movies import Movie
-from database.models.accounts import User
 
 
 class OrderStatusEnum(str, Enum):
