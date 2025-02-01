@@ -27,6 +27,9 @@ jobs:
       - name: Clean mypy cache
         run: rm -rf .mypy_cache
 
+      - name: ls
+        run: ls
+
       - name: Run mypy
         run: poetry run mypy . --config-file mypy.ini
 
