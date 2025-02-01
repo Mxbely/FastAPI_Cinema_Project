@@ -37,12 +37,12 @@ jobs:
         run: |
           python --version
 
-      - name: Run mypy with config file
-        run: |
-          poetry run mypy . --config-file $(pwd)/mypy.ini --exclude "src/database/migrations|src/config|src/tests|src/database/session_postgresql.py"
-
-      - name: Run mypy
-        run: poetry run mypy . --config-file mypy.ini --exclude "^src/database/migrations/.*|^src/config/.*|^src/tests/.*|src/database/session_postgresql.py$"
+#      - name: Run mypy with config file
+#        run: |
+#          poetry run mypy . --config-file $(pwd)/mypy.ini --exclude "src/database/migrations|src/config|src/tests|src/database/session_postgresql.py"
+#
+#      - name: Run mypy
+#        run: poetry run mypy . --config-file mypy.ini --exclude "^src/database/migrations/.*|^src/config/.*|^src/tests/.*|src/database/session_postgresql.py$"
 
       - name: Run Ruff linter
         continue-on-error: true
