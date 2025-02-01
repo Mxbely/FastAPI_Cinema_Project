@@ -29,6 +29,17 @@ jobs:
 
       - name: ls
         run: ls
+      - name: List files for debugging
+        run: |
+          ls -R
+
+      - name: Check Python version
+        run: |
+          python --version
+
+      - name: Run mypy with config file
+        run: |
+          poetry run mypy . --config-file ./mypy.ini --exclude "src/database/migrations/.*|src/config/.*|src/tests/.*|src/database/session_postgresql.py$"
 
       - name: Run mypy
         run: poetry run mypy . --config-file mypy.ini --exclude "^src/database/migrations/.*|^src/config/.*|^src/tests/.*|src/database/session_postgresql.py$"
