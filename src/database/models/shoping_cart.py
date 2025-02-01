@@ -3,7 +3,9 @@ from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database import Base, Movie, User
+from database.models.base import Base
+from database.models.movies import Movie
+from database.models.accounts import User
 
 
 class Cart(Base):
