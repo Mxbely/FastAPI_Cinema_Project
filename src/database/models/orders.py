@@ -1,10 +1,10 @@
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import String, DateTime, DECIMAL, Integer, ForeignKey
+from sqlalchemy import DECIMAL, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database.models.base import Base
+from database import Base, Movie, User
 
 
 class OrderStatusEnum(str, Enum):

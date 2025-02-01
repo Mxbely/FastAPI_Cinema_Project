@@ -1,36 +1,35 @@
 from typing import Optional
-from uuid import uuid4, UUID
+from uuid import UUID, uuid4
 
+from sqlalchemy import (
+    DECIMAL,
+    Column,
+    Float,
+    ForeignKey,
+    String,
+    Table,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.models.base import Base
-from sqlalchemy import (
-    String,
-    Text,
-    DECIMAL,
-    ForeignKey,
-    Float,
-    UniqueConstraint,
-    Table,
-    Column
-)
-from sqlalchemy.orm import (
-    Mapped,
-    mapped_column,
-    relationship
-)
-
 
 MovieGenres = Table(
     "movie_genres",
     Base.metadata,
     Column(
         "movie_id",
-        ForeignKey("movies.id", ondelete="CASCADE"), primary_key=True, nullable=False
+        ForeignKey("movies.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
     ),
     Column(
         "genre_id",
-        ForeignKey("genres.id", ondelete="CASCADE"), primary_key=True, nullable=False
-    )
+        ForeignKey("genres.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    ),
 )
 
 MovieDirectors = Table(
@@ -38,12 +37,16 @@ MovieDirectors = Table(
     Base.metadata,
     Column(
         "movie_id",
-        ForeignKey("movies.id", ondelete="CASCADE"), primary_key=True, nullable=False
+        ForeignKey("movies.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
     ),
     Column(
         "director_id",
-        ForeignKey("directors.id", ondelete="CASCADE"), primary_key=True, nullable=False
-    )
+        ForeignKey("directors.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    ),
 )
 
 MovieStars = Table(
@@ -51,12 +54,16 @@ MovieStars = Table(
     Base.metadata,
     Column(
         "movie_id",
-        ForeignKey("movies.id", ondelete="CASCADE"), primary_key=True, nullable=False
+        ForeignKey("movies.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
     ),
     Column(
         "star_id",
-        ForeignKey("stars.id", ondelete="CASCADE"), primary_key=True, nullable=False
-    )
+        ForeignKey("stars.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    ),
 )
 
 
@@ -67,12 +74,10 @@ class Genre(Base):
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
 
     movie_genres: Mapped[list["Movie"]] = relationship(
-        "Movie",
-        secondary=MovieGenres,
-        back_populates="genres"
+        "Movie", secondary=MovieGenres, back_populates="genres"
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Genre (name='{self.name}')>"
 
 
@@ -83,12 +88,10 @@ class Star(Base):
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
 
     movie_stars: Mapped[list["Movie"]] = relationship(
-        "Movie",
-        secondary=MovieStars,
-        back_populates="stars"
+        "Movie", secondary=MovieStars, back_populates="stars"
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Star (name='{self.name}')>"
 
 
@@ -99,12 +102,10 @@ class Director(Base):
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
 
     movie_directors: Mapped[list["Movie"]] = relationship(
-        "Movie",
-        secondary=MovieDirectors,
-        back_populates="directors"
+        "Movie", secondary=MovieDirectors, back_populates="directors"
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Director (name='{self.name}')>"
 
 
@@ -114,12 +115,9 @@ class Certification(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
 
-    movie: Mapped[list["Movie"]] = relationship(
-        "Movie",
-        back_populates="certification"
-    )
+    movie: Mapped[list["Movie"]] = relationship("Movie", back_populates="certification")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Certification (name='{self.name}')>"
 
 
@@ -127,7 +125,9 @@ class Movie(Base):
     __tablename__ = "movies"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    uuid: Mapped[UUID] = mapped_column(String(36), unique=True, nullable=False, default=lambda: str(uuid4()))
+    uuid: Mapped[UUID] = mapped_column(
+        String(36), unique=True, nullable=False, default=lambda: str(uuid4())
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     year: Mapped[int] = mapped_column(nullable=False)
     time: Mapped[int] = mapped_column(nullable=False)
@@ -138,33 +138,28 @@ class Movie(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False)
     price: Mapped[float] = mapped_column(DECIMAL(10, 2), nullable=False)
 
-    certification_id: Mapped[int] = mapped_column(ForeignKey("certifications.id"), nullable=False)
+    certification_id: Mapped[int] = mapped_column(
+        ForeignKey("certifications.id"), nullable=False
+    )
     certification: Mapped["Certification"] = relationship(
-        "Certification",
-        back_populates="movies"
+        "Certification", back_populates="movies"
     )
 
     genres: Mapped[list["Genre"]] = relationship(
-        "Genre",
-        secondary=MovieGenres,
-        back_populates="movies"
+        "Genre", secondary=MovieGenres, back_populates="movies"
     )
 
     stars: Mapped[list["Star"]] = relationship(
-        "Star",
-        secondary=MovieStars,
-        back_populates="movies"
+        "Star", secondary=MovieStars, back_populates="movies"
     )
 
     directors: Mapped[list["Director"]] = relationship(
-        "Director",
-        secondary=MovieDirectors,
-        back_populates="movies"
+        "Director", secondary=MovieDirectors, back_populates="movies"
     )
 
     __table_args__ = (
         UniqueConstraint("name", "year", "time", name="unique_movie_constraint"),
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Movie (name='{self.name}', imdb='{self.imdb}', time='{self.time}')>"
