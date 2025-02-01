@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database.models.accounts import User
 from database.models.base import Base
 from database.models.movies import Movie
+from database.models.payments import Payment, PaymentItem
 
 
 class OrderStatusEnum(str, Enum):
@@ -36,6 +37,9 @@ class Order(Base):
         "OrderItem", back_populates="order"
     )
     user: Mapped["User"] = relationship("User", back_populates="orders")
+    payments: Mapped[list["Payment"]] = relationship(
+        "Payment", back_populates="order", cascade="all, delete-orphan"
+    )
 
 
 class OrderItem(Base):
@@ -54,3 +58,6 @@ class OrderItem(Base):
 
     order: Mapped["Order"] = relationship("Order", back_populates="order_items")
     movie: Mapped["Movie"] = relationship("Movie", back_populates="order_items")
+    payment_items: Mapped[list["PaymentItem"]] = relationship(
+        "PaymentItem", back_populates="order_item", cascade="all, delete-orphan"
+    )

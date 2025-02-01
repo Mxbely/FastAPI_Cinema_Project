@@ -17,6 +17,9 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from database.models.base import Base
+from database.models.orders import Order
+from database.models.payments import Payment
+from database.models.shoping_cart import Cart
 from database.validators import accounts as validators
 from security.passwords import hash_password, verify_password
 from security.utils import generate_secure_token
@@ -88,6 +91,9 @@ class User(Base):
     profile: Mapped[Optional["UserProfile"]] = relationship(
         "UserProfile", back_populates="user", cascade="all, delete-orphan"
     )
+    cart: Mapped["Cart"] = relationship("Cart", back_populates="user", uselist=False)
+    orders: Mapped[list["Order"]] = relationship("Order", back_populates="user")
+    payments: Mapped[list["Payment"]] = relationship("Payment", back_populates="user")
 
     def __repr__(self):
         return f"<User(id={self.id}, email={self.email}, is_active={self.is_active})>"

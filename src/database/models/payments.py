@@ -9,10 +9,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database.models.base import Base
 
 
-class PaymentStatusEnum(enum.Enum):
+class PaymentStatusEnum(str, enum.Enum):
     SUCCESSFUL = "successful"
     CANCELLED = "cancelled"
     REFUNDED = "refunded"
+    PENDING = "pending"
 
 
 class Payment(Base):

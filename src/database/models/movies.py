@@ -14,57 +14,40 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.models.base import Base
+from database.models.orders import OrderItem
 
-MovieGenres = Table(
-    "movie_genres",
-    Base.metadata,
-    Column(
-        "movie_id",
-        ForeignKey("movies.id", ondelete="CASCADE"),
-        primary_key=True,
-        nullable=False,
-    ),
-    Column(
-        "genre_id",
-        ForeignKey("genres.id", ondelete="CASCADE"),
-        primary_key=True,
-        nullable=False,
-    ),
-)
 
-MovieDirectors = Table(
-    "movie_directors",
-    Base.metadata,
-    Column(
-        "movie_id",
-        ForeignKey("movies.id", ondelete="CASCADE"),
-        primary_key=True,
-        nullable=False,
-    ),
-    Column(
-        "director_id",
-        ForeignKey("directors.id", ondelete="CASCADE"),
-        primary_key=True,
-        nullable=False,
-    ),
-)
+class MovieGenres(Base):
+    __tablename__ = "movie_genres"
 
-MovieStars = Table(
-    "movie_stars",
-    Base.metadata,
-    Column(
-        "movie_id",
-        ForeignKey("movies.id", ondelete="CASCADE"),
-        primary_key=True,
-        nullable=False,
-    ),
-    Column(
-        "star_id",
-        ForeignKey("stars.id", ondelete="CASCADE"),
-        primary_key=True,
-        nullable=False,
-    ),
-)
+    movie_id: Mapped[int] = mapped_column(
+        ForeignKey("movies.id", ondelete="CASCADE"), primary_key=True
+    )
+    genre_id: Mapped[int] = mapped_column(
+        ForeignKey("genres.id", ondelete="CASCADE"), primary_key=True
+    )
+
+
+class MovieDirectors(Base):
+    __tablename__ = "movie_directors"
+
+    movie_id: Mapped[int] = mapped_column(
+        ForeignKey("movies.id", ondelete="CASCADE"), primary_key=True
+    )
+    director_id: Mapped[int] = mapped_column(
+        ForeignKey("directors.id", ondelete="CASCADE"), primary_key=True
+    )
+
+
+class MovieStars(Base):
+    __tablename__ = "movie_stars"
+
+    movie_id: Mapped[int] = mapped_column(
+        ForeignKey("movies.id", ondelete="CASCADE"), primary_key=True
+    )
+    star_id: Mapped[int] = mapped_column(
+        ForeignKey("stars.id", ondelete="CASCADE"), primary_key=True
+    )
 
 
 class Genre(Base):
@@ -73,8 +56,8 @@ class Genre(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
 
-    movie_genres: Mapped[list["Movie"]] = relationship(
-        "Movie", secondary=MovieGenres, back_populates="genres"
+    movies: Mapped[list["Movie"]] = relationship(
+        "Movie", secondary="movie_genres", back_populates="genres"
     )
 
     def __repr__(self):
@@ -87,8 +70,8 @@ class Star(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
 
-    movie_stars: Mapped[list["Movie"]] = relationship(
-        "Movie", secondary=MovieStars, back_populates="stars"
+    movies: Mapped[list["Movie"]] = relationship(
+        "Movie", secondary="movie_stars", back_populates="stars"
     )
 
     def __repr__(self):
@@ -101,8 +84,8 @@ class Director(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
 
-    movie_directors: Mapped[list["Movie"]] = relationship(
-        "Movie", secondary=MovieDirectors, back_populates="directors"
+    movies: Mapped[list["Movie"]] = relationship(
+        "Movie", secondary="movie_directors", back_populates="directors"
     )
 
     def __repr__(self):
@@ -115,7 +98,9 @@ class Certification(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
 
-    movie: Mapped[list["Movie"]] = relationship("Movie", back_populates="certification")
+    movies: Mapped[list["Movie"]] = relationship(
+        "Movie", back_populates="certification"
+    )
 
     def __repr__(self):
         return f"<Certification (name='{self.name}')>"
@@ -146,15 +131,19 @@ class Movie(Base):
     )
 
     genres: Mapped[list["Genre"]] = relationship(
-        "Genre", secondary=MovieGenres, back_populates="movies"
+        "Genre", secondary="movie_genres", back_populates="movies"
     )
 
     stars: Mapped[list["Star"]] = relationship(
-        "Star", secondary=MovieStars, back_populates="movies"
+        "Star", secondary="movie_stars", back_populates="movies"
     )
 
     directors: Mapped[list["Director"]] = relationship(
-        "Director", secondary=MovieDirectors, back_populates="movies"
+        "Director", secondary="movie_directors", back_populates="movies"
+    )
+
+    order_items: Mapped[list["OrderItem"]] = relationship(
+        "OrderItem", back_populates="movie"
     )
 
     __table_args__ = (
