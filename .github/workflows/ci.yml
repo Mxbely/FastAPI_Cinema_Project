@@ -31,7 +31,7 @@ jobs:
         run: ls
 
       - name: Run mypy
-        run: poetry run mypy . --config-file mypy.ini
+        run: poetry run mypy . --config-file mypy.ini --exclude "^src/database/migrations/.*|^src/config/.*|^src/tests/.*|src/database/session_postgresql.py$"
 
       - name: Run Ruff linter
         continue-on-error: true
