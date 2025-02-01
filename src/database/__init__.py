@@ -17,7 +17,7 @@ from database.models.accounts import (
     RefreshToken,
     UserProfile
 )
-from database.models.shoping_cart import Cart, CartItem
+from database.models.shopping_cart import Cart, CartItem
 from database.models.orders import Order, OrderItem
 from database.models.payments import Payment, PaymentItem, PaymentStatusEnum
 from database.models.base import Base
