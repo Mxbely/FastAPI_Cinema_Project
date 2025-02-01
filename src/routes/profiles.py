@@ -4,15 +4,20 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import HttpUrl
 from sqlalchemy.orm import Session
 
-from config import get_s3_storage_client, get_jwt_auth_manager
+from config import get_jwt_auth_manager, get_s3_storage_client
 from database import get_db
-from database.models.accounts import User, UserProfile, GenderEnum, UserGroup, UserGroupEnum
+from database.models.accounts import (
+    GenderEnum,
+    User,
+    UserGroup,
+    UserGroupEnum,
+    UserProfile,
+)
 from exceptions import BaseSecurityError, S3FileUploadError
 from schemas.profiles import ProfileCreateSchema, ProfileResponseSchema
-from security.interfaces import JWTAuthManagerInterface
 from security.http import get_token
+from security.interfaces import JWTAuthManagerInterface
 from storages import S3StorageInterface
-
 
 router = APIRouter()
 
@@ -21,7 +26,7 @@ router = APIRouter()
     "/users/{user_id}/profile/",
     response_model=ProfileResponseSchema,
     summary="Create user profile",
-    status_code=status.HTTP_201_CREATED
+    status_code=status.HTTP_201_CREATED,
 )
 def create_profile(
     user_id: int,
@@ -29,7 +34,7 @@ def create_profile(
     jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager),
     db: Session = Depends(get_db),
     s3_client: S3StorageInterface = Depends(get_s3_storage_client),
-    profile_data: ProfileCreateSchema = Depends(ProfileCreateSchema.from_form)
+    profile_data: ProfileCreateSchema = Depends(ProfileCreateSchema.from_form),
 ) -> ProfileResponseSchema:
     """
     Creates a user profile.
@@ -45,32 +50,31 @@ def create_profile(
         payload = jwt_manager.decode_access_token(token)
         token_user_id = payload.get("user_id")
     except BaseSecurityError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 
     if user_id != token_user_id:
-        user_group = db.query(UserGroup).join(User).filter(User.id == token_user_id).first()
+        user_group = (
+            db.query(UserGroup).join(User).filter(User.id == token_user_id).first()
+        )
 
         if not user_group or user_group.name == UserGroupEnum.USER:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You don't have permission to edit this profile."
+                detail="You don't have permission to edit this profile.",
             )
 
     user = db.query(User).filter_by(id=user_id).first()
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found or not active."
+            detail="User not found or not active.",
         )
 
     existing_profile = db.query(UserProfile).filter_by(user_id=user.id).first()
     if existing_profile:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User already has a profile."
+            detail="User already has a profile.",
         )
 
     avatar_bytes = profile_data.avatar.file.read()
@@ -82,7 +86,7 @@ def create_profile(
         print(f"Error uploading avatar to S3: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to upload avatar. Please try again later."
+            detail="Failed to upload avatar. Please try again later.",
         )
 
     new_profile = UserProfile(
@@ -92,7 +96,7 @@ def create_profile(
         gender=cast(GenderEnum, profile_data.gender),
         date_of_birth=profile_data.date_of_birth,
         info=profile_data.info,
-        avatar=avatar_key
+        avatar=avatar_key,
     )
 
     db.add(new_profile)
@@ -109,5 +113,5 @@ def create_profile(
         gender=new_profile.gender,
         date_of_birth=new_profile.date_of_birth,
         info=new_profile.info,
-        avatar=cast(HttpUrl, avatar_url)
+        avatar=cast(HttpUrl, avatar_url),
     )

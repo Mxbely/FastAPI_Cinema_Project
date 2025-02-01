@@ -1,10 +1,13 @@
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import String, DateTime, DECIMAL, Integer, ForeignKey
+from sqlalchemy import DECIMAL, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from database.models.accounts import User
 from database.models.base import Base
+from database.models.movies import Movie
+from database.models.payments import Payment, PaymentItem
 
 
 class OrderStatusEnum(str, Enum):
@@ -34,7 +37,9 @@ class Order(Base):
         "OrderItem", back_populates="order"
     )
     user: Mapped["User"] = relationship("User", back_populates="orders")
-    payments: Mapped[list["Payment"]] = relationship("Payment", back_populates="order", cascade="all, delete-orphan")
+    payments: Mapped[list["Payment"]] = relationship(
+        "Payment", back_populates="order", cascade="all, delete-orphan"
+    )
 
 
 class OrderItem(Base):

@@ -67,6 +67,7 @@ ignore = [
     "F401",
     "B904",
     "N802",
+    "B008",
 ]
 
 [tool.ruff.lint.pydocstyle]
