@@ -3,16 +3,16 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
+from database.models.base import Base
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database.models.base import Base
 
-
-class PaymentStatusEnum(enum.Enum):
+class PaymentStatusEnum(str, enum.Enum):
     SUCCESSFUL = "successful"
     CANCELLED = "cancelled"
     REFUNDED = "refunded"
+    PENDING = "pending"
 
 
 class Payment(Base):
