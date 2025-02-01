@@ -24,6 +24,9 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-root --no-interaction
 
+      - name: Clean mypy cache
+        run: rm -rf .mypy_cache
+
       - name: Run mypy
         run: poetry run mypy . --config-file pyproject.toml --verbose
 
