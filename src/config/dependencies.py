@@ -1,8 +1,7 @@
 import os
 
-from fastapi import Depends
+from config.settings import BaseAppSettings, Settings, TestingSettings
 
-from config.settings import TestingSettings, Settings, BaseAppSettings
 # from notifications import EmailSenderInterface, EmailSender
 # from security.interfaces import JWTAuthManagerInterface
 # from security.token_manager import JWTAuthManager
@@ -16,7 +15,9 @@ def get_settings() -> BaseAppSettings:
     return Settings()
 
 
-# def get_jwt_auth_manager(settings: BaseAppSettings = Depends(get_settings)) -> JWTAuthManagerInterface:
+# def get_jwt_auth_manager(
+#         settings: BaseAppSettings = Depends(get_settings)
+# ) -> JWTAuthManagerInterface:
 #     return JWTAuthManager(
 #         secret_key_access=settings.SECRET_KEY_ACCESS,
 #         secret_key_refresh=settings.SECRET_KEY_REFRESH,
@@ -24,8 +25,9 @@ def get_settings() -> BaseAppSettings:
 #     )
 
 
-
-# def get_s3_storage_client(settings: BaseAppSettings = Depends(get_settings)) -> S3StorageInterface:
+# def get_s3_storage_client(
+#         settings: BaseAppSettings = Depends(get_settings)
+# ) -> S3StorageInterface:
 #     return S3StorageClient(
 #         endpoint_url=settings.S3_STORAGE_ENDPOINT,
 #         access_key=settings.S3_STORAGE_ACCESS_KEY,
