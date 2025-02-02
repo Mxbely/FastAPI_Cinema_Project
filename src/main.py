@@ -15,5 +15,5 @@ app.include_router(
     profiles_router, prefix=f"{api_version_prefix}/profiles", tags=["profiles"]
 )
 app.include_router(
-    movies_router, prefix=f"{api_version_prefix}/movies", tags=["movies"]
+    movies_router, prefix=f"{api_version_prefix}/cinema", tags=["cinema"]
 )
