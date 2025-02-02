@@ -12,18 +12,24 @@ from config import (
     get_settings,
 )
 from database import (
-    ActivationToken,
-    PasswordResetToken,
-    RefreshToken,
-    User,
-    UserGroup,
     UserGroupEnum,
     get_db,
 )
-from database.crud.accounts import get_user_by_email, get_user_group_by_name, create_user_group_by_name, \
-    create_user_by_email_password_group_id, get_activation_token_by_email_token, delete_token, \
-    delete_password_reset_token_by_user_id, create_password_reset_token_by_user_id, get_password_reset_token_by_user_id, \
-    db_rollback, create_refresh_token_by_user_id_days_token, get_refresh_token_by_refresh_token, get_user_by_id
+from database.crud.accounts import (
+    create_password_reset_token_by_user_id,
+    create_refresh_token_by_user_id_days_token,
+    create_user_by_email_password_group_id,
+    create_user_group_by_name,
+    db_rollback,
+    delete_password_reset_token_by_user_id,
+    delete_token,
+    get_activation_token_by_email_token,
+    get_password_reset_token_by_user_id,
+    get_refresh_token_by_refresh_token,
+    get_user_by_email,
+    get_user_by_id,
+    get_user_group_by_name,
+)
 from exceptions import BaseSecurityError
 from notifications import EmailSenderInterface
 from schemas.accounts import (
@@ -160,7 +166,11 @@ def activate_account(
     Verifies the activation token for a user. If valid, activates the account
     and deletes the token. If invalid or expired, raises an appropriate error.
     """
-    token_record = get_activation_token_by_email_token(db=db, email=activation_data.email, token=activation_data.token)
+    token_record = get_activation_token_by_email_token(
+        db=db,
+        email=activation_data.email,
+        token=activation_data.token
+    )
 
     if not token_record or cast(datetime, token_record.expires_at).replace(
         tzinfo=timezone.utc
@@ -229,7 +239,7 @@ def request_password_reset_token(
 
     delete_password_reset_token_by_user_id(db=db, user_id=user.id)
 
-    reset_token = create_password_reset_token_by_user_id(db=db, user_id=user.id)
+    create_password_reset_token_by_user_id(db=db, user_id=user.id)
 
     password_reset_complete_link = "http://127.0.0.1/accounts/password-reset-complete/"
 
