@@ -1,5 +1,10 @@
 from exceptions.email import BaseEmailError
-from exceptions.security import BaseSecurityError, InvalidTokenError, TokenExpiredError
+from exceptions.payments import handle_stripe_error
+from exceptions.security import (
+    BaseSecurityError,
+    InvalidTokenError,
+    TokenExpiredError,
+)
 from exceptions.storage import (
     BaseS3Error,
     S3BucketNotFoundError,
@@ -8,4 +13,3 @@ from exceptions.storage import (
     S3FileUploadError,
     S3PermissionError,
 )
-from exceptions.payments import handle_stripe_error
