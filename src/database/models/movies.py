@@ -3,18 +3,15 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import (
     DECIMAL,
-    Column,
     Float,
     ForeignKey,
     String,
-    Table,
     Text,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.models.base import Base
-from database.models.orders import OrderItem
 
 
 class MovieGenres(Base):

@@ -1,13 +1,10 @@
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import DECIMAL, DateTime, ForeignKey, Integer, String
+from sqlalchemy import DECIMAL, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database.models.accounts import User
 from database.models.base import Base
-from database.models.movies import Movie
-from database.models.payments import Payment, PaymentItem
 
 
 class OrderStatusEnum(str, Enum):
@@ -26,7 +23,7 @@ class Order(Base):
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.now
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     status: Mapped[OrderStatusEnum] = mapped_column(
         String(50), nullable=False, default=OrderStatusEnum.PENDING.value
@@ -36,6 +33,7 @@ class Order(Base):
     order_items: Mapped[list["OrderItem"]] = relationship(
         "OrderItem", back_populates="order"
     )
+
     user: Mapped["User"] = relationship("User", back_populates="orders")
     payments: Mapped[list["Payment"]] = relationship(
         "Payment", back_populates="order", cascade="all, delete-orphan"
