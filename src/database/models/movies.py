@@ -8,9 +8,11 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    Boolean,
+    TIMESTAMP,
+    func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
 from database.models.base import Base
 
 
@@ -142,6 +144,13 @@ class Movie(Base):
     order_items: Mapped[list["OrderItem"]] = relationship(
         "OrderItem", back_populates="movie"
     )
+    likes: Mapped[list["MovieLike"]] = relationship(
+        "MovieLike", back_populates="movie", cascade="all, delete-orphan"
+    )
+
+    favorites: Mapped[list["FavoriteMovie"]] = relationship(
+        "FavoriteMovie", back_populates="movie", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         UniqueConstraint("name", "year", "time", name="unique_movie_constraint"),
@@ -149,3 +158,34 @@ class Movie(Base):
 
     def __repr__(self) -> str:
         return f"<Movie (name='{self.name}', imdb='{self.imdb}', time='{self.time}')>"
+
+
+
+class MovieLike(Base):
+    __tablename__ = "movie_likes"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    movie_id: Mapped[int] = mapped_column(ForeignKey("movies.id"), primary_key=True)
+    is_liked: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    created_at: Mapped[TIMESTAMP] = mapped_column(TIMESTAMP, nullable=False, server_default=func.now())
+
+    user: Mapped["User"] = relationship("User", back_populates="likes")
+    movie: Mapped["Movie"] = relationship("Movie", back_populates="likes")
+
+    def __repr__(self):
+        return f"<MovieLike (user_id='{self.user_id}', movie_id='{self.movie_id}', is_liked='{self.is_liked}')>"
+
+
+class FavoriteMovie(Base):
+    __tablename__ = "favorite_movies"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    movie_id: Mapped[int] = mapped_column(ForeignKey("movies.id"), primary_key=True)
+    is_favorited: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    created_at: Mapped[TIMESTAMP] = mapped_column(TIMESTAMP, nullable=False, server_default=func.now())
+
+    user: Mapped["User"] = relationship("User", back_populates="favorites")
+    movie: Mapped["Movie"] = relationship("Movie", back_populates="favorites")
+
+    def __repr__(self):
+        return f"<FavoriteMovie (user_id='{self.user_id}', movie_id='{self.movie_id}')>"
