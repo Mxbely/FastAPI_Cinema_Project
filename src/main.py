@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from routes import accounts_router, profiles_router, orders_router
+from routes import accounts_router, profiles_router, orders_router, payments_router
 
 app = FastAPI(
     title="Movies Cinema",
@@ -16,4 +16,7 @@ app.include_router(
 )
 app.include_router(
     orders_router, prefix=f"{api_version_prefix}", tags=["orders"]
+)
+app.include_router(
+    payments_router, prefix=f"{api_version_prefix}/payments", tags=["payments"]
 )
