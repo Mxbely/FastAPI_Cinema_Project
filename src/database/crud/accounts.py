@@ -63,6 +63,7 @@ def create_password_reset_token_by_user_id(db, user_id):
     reset_token = PasswordResetToken(user_id=user_id)
     db.add(reset_token)
     db.commit()
+    return reset_token
 
 
 def get_password_reset_token_by_user_id(db, user_id):
