@@ -6,7 +6,7 @@ from fastapi import (
 from sqlalchemy.orm import Session
 
 from database.session_postgresql import get_postgresql_db
-from schemas.shoping_cart import (
+from schemas.shopping_cart import (
     CartCreate,
     CartResponse,
     CartItemResponse,
