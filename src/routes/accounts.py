@@ -177,8 +177,7 @@ def activate_account(
     ) < datetime.now(timezone.utc):
         if token_record:
             delete_token(db=db, token=token_record)
-            # db.delete(token_record)
-            # db.commit()
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired activation token.",
