@@ -1,4 +1,4 @@
-from database import User, UserGroup, ActivationToken, PasswordResetToken, RefreshToken
+from database import ActivationToken, PasswordResetToken, RefreshToken, User, UserGroup
 
 
 def get_user_by_email(db, email):
