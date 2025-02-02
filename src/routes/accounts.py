@@ -20,6 +20,10 @@ from database import (
     UserGroupEnum,
     get_db,
 )
+from database.crud.accounts import get_user_by_email, get_user_group_by_name, create_user_group_by_name, \
+    create_user_by_email_password_group_id, get_activation_token_by_email_token, delete_token, \
+    delete_password_reset_token_by_user_id, create_password_reset_token_by_user_id, get_password_reset_token_by_user_id, \
+    db_rollback, create_refresh_token_by_user_id_days_token, get_refresh_token_by_refresh_token, get_user_by_id
 from exceptions import BaseSecurityError
 from notifications import EmailSenderInterface
 from schemas.accounts import (
@@ -83,35 +87,44 @@ def register_user(
     In case of any unexpected issues during the creation process,
     an HTTP 500 error is returned.
     """
-    existing_user = db.query(User).filter_by(email=user_data.email).first()
+    # existing_user = db.query(User).filter_by(email=user_data.email).first()
+    existing_user = get_user_by_email(db=db, email=user_data.email)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"A user with this email {user_data.email} already exists.",
         )
 
-    user_group = db.query(UserGroup).filter_by(name=UserGroupEnum.USER).first()
+    # user_group = db.query(UserGroup).filter_by(name=UserGroupEnum.USER).first()
+    user_group = get_user_group_by_name(db=db, name=UserGroupEnum.USER)
 
     if not user_group:
-        user_group = UserGroup(name=UserGroupEnum.USER)
-        db.add(user_group)
-        db.commit()
-        db.refresh(user_group)
+        user_group = create_user_group_by_name(db=db, name=UserGroupEnum.USER)
+        # user_group = UserGroup(name=UserGroupEnum.USER)
+        # db.add(user_group)
+        # db.commit()
+        # db.refresh(user_group)
 
     try:
-        new_user = User.create(
-            email=str(user_data.email),
-            raw_password=user_data.password,
-            group_id=user_group.id,
+        new_user, activation_token = create_user_by_email_password_group_id(
+            db=db,
+            email=user_data.email,
+            password=user_data.password,
+            group_id=user_group.id
         )
-        db.add(new_user)
-        db.flush()
+        # new_user = User.create(
+        #     email=str(user_data.email),
+        #     raw_password=user_data.password,
+        #     group_id=user_group.id,
+        # )
+        # db.add(new_user)
+        # db.flush()
 
-        activation_token = ActivationToken(user_id=new_user.id)
-        db.add(activation_token)
-
-        db.commit()
-        db.refresh(new_user)
+        # activation_token = ActivationToken(user_id=new_user.id)
+        # db.add(activation_token)
+        #
+        # db.commit()
+        # db.refresh(new_user)
     except SQLAlchemyError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -166,22 +179,24 @@ def activate_account(
     Verifies the activation token for a user. If valid, activates the account
     and deletes the token. If invalid or expired, raises an appropriate error.
     """
-    token_record = (
-        db.query(ActivationToken)
-        .join(User)
-        .filter(
-            User.email == activation_data.email,
-            ActivationToken.token == activation_data.token,
-        )
-        .first()
-    )
+    token_record = get_activation_token_by_email_token(db=db, email=activation_data.email, token=activation_data.token)
+    # token_record = (
+    #     db.query(ActivationToken)
+    #     .join(User)
+    #     .filter(
+    #         User.email == activation_data.email,
+    #         ActivationToken.token == activation_data.token,
+    #     )
+    #     .first()
+    # )
 
     if not token_record or cast(datetime, token_record.expires_at).replace(
         tzinfo=timezone.utc
     ) < datetime.now(timezone.utc):
         if token_record:
-            db.delete(token_record)
-            db.commit()
+            delete_token(db=db, token=token_record)
+            # db.delete(token_record)
+            # db.commit()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired activation token.",
@@ -195,8 +210,9 @@ def activate_account(
         )
 
     user.is_active = True
-    db.delete(token_record)
-    db.commit()
+    delete_token(db=db, token=token_record)
+    # db.delete(token_record)
+    # db.commit()
 
     login_link = "http://127.0.0.1/accounts/login/"
 
@@ -233,7 +249,8 @@ def request_password_reset_token(
     invalidates any existing password reset tokens and generates a new one.
     Always responds with a success message to avoid leaking user information.
     """
-    user = db.query(User).filter_by(email=data.email).first()
+    # user = db.query(User).filter_by(email=data.email).first()
+    user = get_user_by_email(db=db, email=data.email)
 
     if not user or not user.is_active:
         return MessageResponseSchema(
@@ -241,11 +258,13 @@ def request_password_reset_token(
                     "you will receive an email with instructions."
         )
 
-    db.query(PasswordResetToken).filter_by(user_id=user.id).delete()
+    # db.query(PasswordResetToken).filter_by(user_id=user.id).delete()
+    delete_password_reset_token_by_user_id(db=db, user_id=user.id)
 
-    reset_token = PasswordResetToken(user_id=cast(int, user.id))
-    db.add(reset_token)
-    db.commit()
+    create_password_reset_token_by_user_id(db=db, user_id=user.id)
+    # reset_token = PasswordResetToken(user_id=cast(int, user.id))
+    # db.add(reset_token)
+    # db.commit()
 
     password_reset_complete_link = "http://127.0.0.1/accounts/password-reset-complete/"
 
@@ -311,13 +330,16 @@ def reset_password(
     if the token is valid and not expired.
     Deletes the token after successful password reset.
     """
-    user = db.query(User).filter_by(email=data.email).first()
+    user = get_user_by_email(db=db, email=data.email)
+    # user = db.query(User).filter_by(email=data.email).first()
+
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email or token."
         )
 
-    token_record = db.query(PasswordResetToken).filter_by(user_id=user.id).first()
+    # token_record = db.query(PasswordResetToken).filter_by(user_id=user.id).first()
+    token_record = get_password_reset_token_by_user_id(db=db, user_id=user.id)
 
     expires_at = cast(datetime, token_record.expires_at).replace(tzinfo=timezone.utc)
 
@@ -327,18 +349,21 @@ def reset_password(
         or expires_at < datetime.now(timezone.utc)
     ):
         if token_record:
-            db.delete(token_record)
-            db.commit()
+            delete_token(db=db, token=token_record)
+            # db.delete(token_record)
+            # db.commit()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email or token."
         )
 
     try:
         user.password = data.password
-        db.delete(token_record)
-        db.commit()
+        delete_token(db=db, token=token_record)
+        # db.delete(token_record)
+        # db.commit()
     except SQLAlchemyError:
-        db.rollback()
+        # db.rollback()
+        db_rollback(db=db)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while resetting the password.",
@@ -402,7 +427,8 @@ def login_user(
     If authentication is successful, creates a new refresh token and
     returns both access and refresh tokens.
     """
-    user = cast(User, db.query(User).filter_by(email=login_data.email).first())
+    user = get_user_by_email(db=db, email=login_data.email)
+    # user = cast(User, db.query(User).filter_by(email=login_data.email).first())
     if not user or not user.verify_password(login_data.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -418,16 +444,23 @@ def login_user(
     jwt_refresh_token = jwt_manager.create_refresh_token({"user_id": user.id})
 
     try:
-        refresh_token = RefreshToken.create(
+        create_refresh_token_by_user_id_days_token(
+            db=db,
             user_id=user.id,
             days_valid=settings.LOGIN_TIME_DAYS,
             token=jwt_refresh_token,
         )
-        db.add(refresh_token)
-        db.flush()
-        db.commit()
+        # refresh_token = RefreshToken.create(
+        #     user_id=user.id,
+        #     days_valid=settings.LOGIN_TIME_DAYS,
+        #     token=jwt_refresh_token,
+        # )
+        # db.add(refresh_token)
+        # db.flush()
+        # db.commit()
     except SQLAlchemyError:
-        db.rollback()
+        # db.rollback()
+        db_rollback(db=db)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while processing the request.",
@@ -487,16 +520,21 @@ def refresh_access_token(
             detail=str(error),
         )
 
-    refresh_token_record = (
-        db.query(RefreshToken).filter_by(token=token_data.refresh_token).first()
+    refresh_token_record = get_refresh_token_by_refresh_token(
+        db=db,
+        refresh_token=token_data.refresh_token
     )
+    # refresh_token_record = (
+    #     db.query(RefreshToken).filter_by(token=token_data.refresh_token).first()
+    # )
     if not refresh_token_record:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token not found.",
         )
 
-    user = db.query(User).filter_by(id=user_id).first()
+    user = get_user_by_id(db=db, user_id=user_id)
+    # user = db.query(User).filter_by(id=user_id).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
