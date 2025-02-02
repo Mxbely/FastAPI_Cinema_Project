@@ -94,7 +94,7 @@ def clear_cart(
 
 
 @router.get("/purchased")
-def get_purchased_movies(
+def list_purchased_movies(
         db: Session = Depends(get_postgresql_db),
         user: User = Depends(get_current_user)
 ):
