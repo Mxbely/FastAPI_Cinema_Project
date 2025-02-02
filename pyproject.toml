@@ -37,6 +37,7 @@ pillow = "^11.1.0"
 python-multipart = "^0.0.20"
 gunicorn = "^23.0.0"
 black = "^25.1.0"
+stripe = "^11.5.0"
 mypy = "^1.14.1"
 
 
