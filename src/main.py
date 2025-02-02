@@ -16,6 +16,6 @@ app.include_router(
 app.include_router(
     profiles_router, prefix=f"{api_version_prefix}/profiles", tags=["profiles"]
 )
-
-
-app.include_router(shopping_carts_router, prefix=f"{api_version_prefix}/carts", tags=["carts"])
+app.include_router(
+    shopping_carts_router, prefix=f"{api_version_prefix}/carts", tags=["carts"]
+)

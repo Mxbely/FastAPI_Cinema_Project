@@ -38,3 +38,7 @@ def add_cart_item(cart: Cart, movie: Movie, db: Session):
 def delete_cart_item(cart_item: CartItem, db: Session):
     db.delete(cart_item)
     db.commit()
+
+
+def get_purchased_movies(user: User, db: Session):
+    return db.query(Movie).join(CartItem).join(Cart).filter(Cart.user_id == user.id).all()

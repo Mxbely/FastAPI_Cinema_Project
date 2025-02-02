@@ -1,10 +1,7 @@
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException
-)
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from database import CartItem, Cart, User
 from database.session_postgresql import get_postgresql_db
 from schemas.shopping_cart import (
     CartCreate,
@@ -12,21 +9,21 @@ from schemas.shopping_cart import (
     CartItemResponse,
     CartItemDetail
 )
-from database.models.accounts import User
 from database.crud.shopping_cart import (
     get_user_cart,
     get_movie_by_id,
     get_cart_item,
     create_cart,
     add_cart_item,
-    delete_cart_item
+    delete_cart_item,
+    get_purchased_movies
 )
 from validation.shopping_cart import (
     validate_not_in_cart,
     validate_not_purchased,
     validate_movie_availability
 )
-
+from security import get_current_user
 
 router = APIRouter(prefix="/cart", tags=["Shopping Cart"])
 
@@ -39,7 +36,6 @@ def get_cart(
     cart = get_user_cart(user, db)
     if not cart:
         return CartResponse(user_id=user.id, movies=[])
-
     return CartResponse(user_id=user.id, movies=get_cart_items_details(cart))
 
 
@@ -57,10 +53,7 @@ def add_to_cart(
     validate_not_purchased(user, movie, db)
     validate_not_in_cart(user, movie, db)
 
-    cart = get_user_cart(user, db)
-    if not cart:
-        cart = create_cart(user, db)
-
+    cart = get_user_cart(user, db) or create_cart(user, db)
     add_cart_item(cart, movie, db)
     db.refresh(cart)
 
@@ -81,8 +74,53 @@ def remove_from_cart(
     if not cart_item:
         raise HTTPException(status_code=404, detail="Movie not in cart")
 
+    # notify_moderators(f"User {user.id} removed movie {cart_item.movie.name} from the cart.")
     delete_cart_item(cart_item, db)
     return CartItemResponse(message="Movie removed from cart")
+
+
+@router.delete("/clear", response_model=CartItemResponse)
+def clear_cart(
+        db: Session = Depends(get_postgresql_db), user: User = Depends(get_current_user)
+):
+    cart = get_user_cart(user, db)
+    if not cart or not cart.items:
+        raise HTTPException(status_code=404, detail="Cart is already empty")
+
+    db.query(CartItem).filter(CartItem.cart_id == cart.id).delete()
+    db.commit()
+
+    return CartItemResponse(message="Cart cleared successfully")
+
+
+@router.get("/purchased")
+def get_purchased_movies(
+        db: Session = Depends(get_postgresql_db),
+        user: User = Depends(get_current_user)
+):
+    purchased_movies = get_purchased_movies(user, db)
+
+    return {"purchased_movies": [movie.name for movie in purchased_movies]}
+
+
+@router.get("/admin/carts")
+def get_all_carts(
+        db: Session = Depends(get_postgresql_db),
+        user: User = Depends(get_current_user)
+):
+    if user.group.name != "moderator":
+        raise HTTPException(status_code=403, detail="You are not authorized")
+
+    all_carts = db.query(Cart).all()
+    return {
+        "carts": [
+            {
+                "user_id": cart.user_id,
+                "movies": [item.movie.name for item in cart.items]
+            }
+            for cart in all_carts
+        ]
+    }
 
 
 def get_cart_items_details(cart):

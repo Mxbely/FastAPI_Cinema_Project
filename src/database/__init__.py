@@ -20,7 +20,7 @@ from database.models.movies import (
 )
 from database.models.orders import Order, OrderItem
 from database.models.payments import Payment, PaymentItem, PaymentStatusEnum
-from database.models.shoping_cart import Cart, CartItem
+from database.models.shopping_cart import Cart, CartItem
 from database.session_postgresql import get_postgresql_db as get_db
 from database.session_postgresql import (
     get_postgresql_db_contextmanager as get_db_contextmanager,
