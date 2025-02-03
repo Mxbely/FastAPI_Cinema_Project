@@ -7,7 +7,7 @@ from database.models import (  # noqa: F401
     movies,
     orders,
     payments,
-    shoping_cart,
+    shopping_cart,
 )
 from database.models.base import Base
 from database.session_postgresql import postgresql_engine
