@@ -113,3 +113,40 @@ def get_user_orders(
     ]
 
     return order_list
+
+
+def get_order_by_id(db: Session, order_id: int, current_user_id: int | None = None) -> Order:
+    """Retrieve an order by ID and check permissions."""
+    order = db.query(Order).filter(Order.id == order_id).first()
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Order not found."
+        )
+
+    if current_user_id and order.user_id != current_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to view this order.",
+        )
+
+    return order
+
+
+def format_order_detail(order: Order) -> OrderItemResponseSchema:
+    """Format the order details for the response."""
+    return OrderItemResponseSchema(
+        created_at=order.created_at,
+        movies=[
+            MovieListItemSchema(
+                id=item.movie.id,
+                name=item.movie.name,
+                year=item.movie.year,
+                time=item.movie.time,
+                description=item.movie.description,
+            )
+            for item in order.order_items
+        ],
+        total_amount=order.total_amount,
+        status=order.status,
+    )
