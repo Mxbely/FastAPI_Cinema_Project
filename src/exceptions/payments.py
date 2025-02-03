@@ -1,8 +1,10 @@
+from typing import NoReturn
+
 import stripe
 from fastapi import HTTPException, status
 
 
-def handle_stripe_error(e: Exception):
+def handle_stripe_error(e: Exception) -> NoReturn:
     """
     Handles Stripe API errors and returns appropriate HTTP responses.
     """
