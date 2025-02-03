@@ -16,7 +16,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
+from database import Cart, Order, Payment
 from database.models.base import Base
+from database.models.movies import FavoriteMovie, MovieLike
 from database.validators import accounts as validators
 from security.passwords import hash_password, verify_password
 from security.utils import generate_secure_token

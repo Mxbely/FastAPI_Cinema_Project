@@ -1,55 +1,46 @@
 from typing import Optional
-from sqlalchemy.orm import Session
-from config import get_jwt_auth_manager
-from security.http import get_token
-from security.interfaces import JWTAuthManagerInterface
-from fastapi import (
-    APIRouter,
-    Query,
-    Depends,
-    HTTPException
-)
 
-from database.models.movies import MovieLike, FavoriteMovie
-from database import (
-    get_db,
-    Movie,
-    Genre,
-    Star
-)
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session
+
+from config import get_jwt_auth_manager
+from database import Genre, Movie, Star, get_db
 from database.crud.movies import (
     filter_movies,
+    get_all_genres,
+    get_all_stars,
+    get_detail_movies_by_id,
+    get_favourite_movie,
+    get_genre_by_id,
+    get_genre_by_name,
+    get_liked_movie,
+    get_movie_by_id,
     get_movie_by_name,
+    get_or_create_certification,
+    get_or_create_directors,
     get_or_create_genres,
     get_or_create_stars,
-    get_or_create_directors,
-    get_or_create_certification,
-    get_detail_movies_by_id,
-    get_movie_by_id,
-    get_star_by_name,
-    get_all_stars,
     get_star_by_id,
-    get_genre_by_name,
-    get_all_genres,
-    get_genre_by_id,
+    get_star_by_name,
     get_user_by_id,
-    get_liked_movie,
-    get_favourite_movie
 )
+from database.models.movies import FavoriteMovie, MovieLike
 from schemas.movies import (
-    MovieListResponseSchema,
-    MovieListItemSchema,
-    MovieDetailSchema,
-    MovieCreateSchema,
-    MovieUpdateSchema,
-    StarsSchema,
-    StarsResponseSchema,
-    GenresSchema,
     GenreResponseSchema,
-    MovieLikeResponseSchema,
+    GenresSchema,
+    MovieCreateSchema,
+    MovieDetailSchema,
     MovieFavoriteResponseSchema,
-    MovieSortEnum
+    MovieLikeResponseSchema,
+    MovieListItemSchema,
+    MovieListResponseSchema,
+    MovieSortEnum,
+    MovieUpdateSchema,
+    StarsResponseSchema,
+    StarsSchema,
 )
+from security.http import get_token
+from security.interfaces import JWTAuthManagerInterface
 
 router = APIRouter()
 
@@ -60,8 +51,10 @@ router = APIRouter()
     summary="Get a paginated list of movies",
     description=(
             "<h3>This endpoint retrieves a paginated list of movies from the database. "
-            "Clients can specify the `page` number and the number of items per page using `per_page`. "
-            "The response includes details about the movies, total pages, and total items, "
+            "Clients can specify the `page` number and the number of items "
+            "per page using `per_page`. "
+            "The response includes details about the movies, "
+            "total pages, and total items, "
             "along with links to the previous and next pages if applicable.</h3>"
     ),
     responses={
@@ -92,13 +85,15 @@ def get_movie_list(
     """
        Fetch a paginated list of movies from the database.
 
-       This function retrieves a paginated list of movies, allowing the client to specify
+       This function retrieves a paginated list of movies,
+       allowing the client to specify
        the page number and the number of items per page. It calculates the total pages
        and provides links to the previous and next pages when applicable.
 
        :param page: The page number to retrieve (1-based index, must be >= 1).
        :type page: int
-       :param per_page: The number of items to display per page (must be between 1 and 20).
+       :param per_page:
+              The number of items to display per page (must be between 1 and 20).
        :type per_page: int
        :param db: The SQLAlchemy database session (provided via dependency injection).
        :type db: Session
@@ -106,7 +101,8 @@ def get_movie_list(
        :return: A response containing the paginated list of movies and metadata.
        :rtype: MovieListResponseSchema
 
-       :raises HTTPException: Raises a 404 error if no movies are found for the requested page.
+       :raises HTTPException:
+               Raises a 404 error if no movies are found for the requested page.
     """
 
     movies_filter = {
@@ -128,9 +124,17 @@ def get_movie_list(
         raise HTTPException(status_code=404, detail="No movies found.")
 
     return MovieListResponseSchema(
-        movies=[MovieListItemSchema.model_validate(movie) for movie in paginated_movies],
-        prev_page=f"/movies/?page={page - 1}&per_page={per_page}" if page > 1 else None,
-        next_page=f"/movies/?page={page + 1}&per_page={per_page}" if page < total_pages else None,
+        movies=[
+            MovieListItemSchema.model_validate(movie) for movie in paginated_movies
+        ],
+        prev_page=(
+            f"/movies/?page={page - 1}&per_page={per_page}"
+            if page > 1 else None
+        ),
+        next_page=(
+            f"/movies/?page={page + 1}&per_page={per_page}"
+            if page < total_pages else None
+        ),
         total_pages=total_pages,
         total_items=total_items,
     )
@@ -164,7 +168,8 @@ def movie_detail(
     """
     Retrieve detailed information about a specific movie by its ID.
 
-    This function fetches detailed information about a movie identified by its unique ID.
+    This function fetches detailed information about a movie
+    identified by its unique ID.
     If the movie does not exist, a 404 error is returned.
 
     :param movie_id: The unique identifier of the movie to retrieve.
@@ -175,7 +180,8 @@ def movie_detail(
     :return: The details of the requested movie.
     :rtype: MovieDetailResponseSchema
 
-    :raises HTTPException: Raises a 404 error if the movie with the given ID is not found.
+    :raises HTTPException:
+            Raises a 404 error if the movie with the given ID is not found.
     """
     movie = get_detail_movies_by_id(db, movie_id)
 
@@ -239,7 +245,9 @@ def create_movie(
     if existing_movie:
         raise HTTPException(
             status_code=409,
-            detail=f"A movie with the name '{movie_data.name}' and release date '{movie_data.date}' already exists."
+            detail=(
+                f"A movie with the name '{movie_data.name}'"
+            )
         )
 
     try:
@@ -316,7 +324,8 @@ def update_movie(
     :param db: The SQLAlchemy database session (provided via dependency injection).
     :type db: Session
 
-    :raises HTTPException: Raises a 404 error if the movie with the given ID is not found.
+    :raises HTTPException:
+            Raises a 404 error if the movie with the given ID is not found.
 
     :return: A response indicating the successful update of the movie.
     :rtype: None
@@ -380,7 +389,8 @@ def delete_movie(
     :param db: The SQLAlchemy database session (provided via dependency injection).
     :type db: Session
 
-    :raises HTTPException: Raises a 404 error if the movie with the given ID is not found.
+    :raises HTTPException:
+            Raises a 404 error if the movie with the given ID is not found.
 
     :return: A response indicating the successful deletion of the movie.
     :rtype: None
