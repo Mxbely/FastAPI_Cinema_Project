@@ -1,14 +1,17 @@
 from datetime import datetime
-from typing import Optional
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+import stripe
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi_pagination import LimitOffsetPage
 from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy.orm import Session
 
 from config import get_jwt_auth_manager
-from database import Payment, PaymentStatusEnum, User, UserGroupEnum, get_db
-from exceptions import BaseSecurityError
+from database import Order, Payment, PaymentStatusEnum, User, UserGroupEnum, get_db
+from database.crud import get_payment_by_session_id, update_payment_status
+from database.models.orders import OrderStatusEnum
+from exceptions import BaseSecurityError, handle_stripe_error
 from schemas import PaymentHistoryResponse
 from schemas.accounts import MessageResponseSchema
 from security.http import get_token
@@ -68,10 +71,98 @@ def read_payments(
 
 
 @router.get("/success")
-def payment_success():
-    pass
+def payment_success(
+    session_id: Annotated[str, Query(max_length=500)],
+    db: Session = Depends(get_db)
+):
+    if not session_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No session_id provided."
+        )
+
+    payment = db.query(Payment).filter_by(external_payment_id=session_id).first()
+
+    if not payment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Payment with session_id {session_id} not found."
+        )
+
+    if payment.status == PaymentStatusEnum.SUCCESSFUL:
+        return MessageResponseSchema(
+            message=f"Payment with session_id {session_id} was successful."
+        )
+
+    session = None
+
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+    except stripe.error.StripeError as e:
+        handle_stripe_error(e)
+
+    if session.payment_status == "paid":
+        update_payment_status(
+            payment,
+            PaymentStatusEnum.SUCCESSFUL,
+            db
+        )
+
+        order = db.query(Order).filter_by(id=payment.order_id).first()
+        order.status = OrderStatusEnum.PAID
+        db.commit()
+        return MessageResponseSchema(
+            message=f"Payment with session_id {session_id} was successful."
+        )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Payment was not successful."
+        )
 
 
 @router.get("/cancel")
-def payment_cancel():
-    pass
+def payment_cancel(
+    session_id: Annotated[str, Query(max_length=500)],
+    db: Session = Depends(get_db)
+):
+    if not session_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No session_id provided."
+        )
+
+    payment = get_payment_by_session_id(session_id, db)
+
+    if not payment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Payment with session_id {session_id} not found."
+        )
+
+    if (
+        payment.status == PaymentStatusEnum.CANCELLED or
+        payment.status == PaymentStatusEnum.SUCCESSFUL
+    ):
+        return MessageResponseSchema(
+            message=f"Payment with session_id {session_id} "
+                    f"was already cancelled or successful."
+        )
+
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+        if not session:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Session with id {session_id} not found."
+            )
+
+        stripe.checkout.Session.expire(session_id)
+    except stripe.error.StripeError as e:
+        handle_stripe_error(e)
+
+    update_payment_status(payment, PaymentStatusEnum.CANCELLED, db)
+
+    return MessageResponseSchema(
+        message=f"Payment with session_id {session_id} was cancelled."
+    )
