@@ -2,21 +2,21 @@ from datetime import datetime
 from typing import Annotated, Optional
 
 import stripe
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, BackgroundTasks
 from fastapi_pagination.ext.sqlalchemy import paginate
 from fastapi_pagination.links import Page
 from sqlalchemy.orm import Session
 
-from config import get_jwt_auth_manager
-from database import Order, Payment, PaymentStatusEnum, UserGroupEnum, get_db
+from config import get_jwt_auth_manager, get_accounts_email_notificator, get_settings
+from database import Order, Payment, PaymentStatusEnum, UserGroupEnum, get_db, User
 from database.crud import get_payment_by_session_id, update_payment_status
 from database.models.orders import OrderStatusEnum
 from exceptions import handle_stripe_error
+from notifications import EmailSenderInterface
 from schemas import PaymentHistoryResponse
 from schemas.accounts import MessageResponseSchema
 from security.http import get_token
 from security.interfaces import JWTAuthManagerInterface
-from services import create_checkout_session
 from utils import retrieve_user_from_token
 
 router = APIRouter()
@@ -96,7 +96,6 @@ def payment_success(
         return MessageResponseSchema(message=f"Payment {session_id} was successful.")
     except stripe.StripeError as e:
         handle_stripe_error(e)
-        return MessageResponseSchema(message=f"Payment {session_id} failed.")
 
 
 @router.get("/cancel")
@@ -204,6 +203,61 @@ def payment_refund(
         )
     except stripe.StripeError as e:
         handle_stripe_error(e)
-        return MessageResponseSchema(
-            message=f"An error occurred while refunding order with id {order_id}."
+
+
+@router.post("/stripe-webhook")
+async def stripe_webhook(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    email_sender: EmailSenderInterface = Depends(get_accounts_email_notificator)
+):
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+
+    # Handling Stripe event
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, get_settings().STRIPE_WEBHOOK_SECRET
         )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid payload: {str(e)}"
+        )
+    except stripe.SignatureVerificationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid signature: {str(e)}"
+        )
+
+    # Handling "checkout.session.completed" event
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        session_id = session.get("id")
+
+        # Retrieving payment from the database
+        payment = get_payment_by_session_id(session_id, db)
+        if not payment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Payment not found."
+            )
+
+        # Generating order link and retrieving user's email
+        order_link = request.url_for("read_order", order_id=payment.order_id)
+        user = db.query(User).filter_by(id=payment.user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found."
+            )
+
+        # Sending email in the background
+        background_tasks.add_task(
+            email_sender.send_payment_success_email,
+            str(user.email),
+            str(order_link)
+        )
+
+    return MessageResponseSchema(message="Success")
