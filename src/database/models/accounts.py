@@ -1,6 +1,6 @@
 import enum
 from datetime import date, datetime, timedelta, timezone
-from typing import List, Optional
+from typing import Any, AnyStr, List, Optional
 
 from sqlalchemy import (
     Boolean,
@@ -43,7 +43,7 @@ class UserGroup(Base):
 
     users: Mapped[List["User"]] = relationship("User", back_populates="group")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<UserGroup(id={self.id}, name={self.name})>"
 
 
@@ -92,7 +92,7 @@ class User(Base):
     orders: Mapped[list["Order"]] = relationship("Order", back_populates="user")
     payments: Mapped[list["Payment"]] = relationship("Payment", back_populates="user")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<User(id={self.id}, email={self.email}, is_active={self.is_active})>"
 
     def has_group(self, group_name: UserGroupEnum) -> bool:
@@ -100,7 +100,7 @@ class User(Base):
 
     @classmethod
     def create(
-        cls, email: str, raw_password: str, group_id: int | Mapped[int]
+        cls, email: str, raw_password: None, group_id: int | Mapped[int]
     ) -> "User":
         """
         Factory method to create a new User instance.
@@ -126,14 +126,14 @@ class User(Base):
         validators.validate_password_strength(raw_password)
         self._hashed_password = hash_password(raw_password)
 
-    def verify_password(self, raw_password: str) -> bool:
+    def verify_password(self, raw_password: str) -> Any | bool:
         """
         Verify the provided password against the stored hashed password.
         """
         return verify_password(raw_password, self._hashed_password)
 
     @validates("email")
-    def validate_email(self, key, value):
+    def validate_email(self, value: str) -> Any:
         return validators.validate_email(value.lower())
 
 
@@ -155,7 +155,7 @@ class UserProfile(Base):
 
     __table_args__ = (UniqueConstraint("user_id"),)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"<UserProfile(id={self.id}, "
             f"first_name={self.first_name}, "
@@ -190,7 +190,7 @@ class ActivationToken(TokenBase):
 
     __table_args__ = (UniqueConstraint("user_id"),)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (f"<ActivationToken(id={self.id}, "
                 f"token={self.token}, "
                 f"expires_at={self.expires_at})>")
@@ -203,7 +203,7 @@ class PasswordResetToken(TokenBase):
 
     __table_args__ = (UniqueConstraint("user_id"),)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (f"<PasswordResetToken(id={self.id}, "
                 f"token={self.token}, "
                 f"expires_at={self.expires_at})>")
@@ -229,7 +229,7 @@ class RefreshToken(TokenBase):
         expires_at = datetime.now(timezone.utc) + timedelta(days=days_valid)
         return cls(user_id=user_id, expires_at=expires_at, token=token)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (f"<RefreshToken(id={self.id}, "
                 f"token={self.token}, "
                 f"expires_at={self.expires_at})>")

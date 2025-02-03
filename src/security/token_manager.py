@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from jose import ExpiredSignatureError, JWTError, jwt
 
@@ -24,8 +24,8 @@ class JWTAuthManager(JWTAuthManagerInterface):
         self._algorithm = algorithm
 
     def _create_token(
-        self, data: dict, secret_key: str, expires_delta: timedelta
-    ) -> str:
+        self, data: Dict[str, Any], secret_key: str, expires_delta: timedelta
+    ) -> Any:
         """
         Create a JWT token with provided data, secret key, and expiration time.
         """
@@ -35,8 +35,8 @@ class JWTAuthManager(JWTAuthManagerInterface):
         return jwt.encode(to_encode, secret_key, algorithm=self._algorithm)
 
     def create_access_token(
-        self, data: dict, expires_delta: Optional[timedelta] = None
-    ) -> str:
+        self, data: Dict[str, str], expires_delta: Optional[timedelta] = None
+    ) -> Any:
         """
         Create a new access token with a default or specified expiration time.
         """
@@ -47,8 +47,8 @@ class JWTAuthManager(JWTAuthManagerInterface):
         )
 
     def create_refresh_token(
-        self, data: dict, expires_delta: Optional[timedelta] = None
-    ) -> str:
+        self, data: Dict[str, str], expires_delta: Optional[timedelta] = None
+    ) -> Any:
         """
         Create a new refresh token with a default or specified expiration time.
         """
@@ -58,7 +58,7 @@ class JWTAuthManager(JWTAuthManagerInterface):
             expires_delta or timedelta(minutes=self._REFRESH_KEY_TIMEDELTA_MINUTES),
         )
 
-    def decode_access_token(self, token: str) -> dict:
+    def decode_access_token(self, token: str) -> Any:
         """
         Decode and validate an access token, returning the token's data.
         """
@@ -71,7 +71,7 @@ class JWTAuthManager(JWTAuthManagerInterface):
         except JWTError:
             raise InvalidTokenError
 
-    def decode_refresh_token(self, token: str) -> dict:
+    def decode_refresh_token(self, token: str) -> Any:
         """
         Decode and validate a refresh token, returning the token's data.
         """

@@ -57,7 +57,7 @@ class Genre(Base):
         "Movie", secondary="movie_genres", back_populates="genres"
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Genre (name='{self.name}')>"
 
 
@@ -71,7 +71,7 @@ class Star(Base):
         "Movie", secondary="movie_stars", back_populates="stars"
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Star (name='{self.name}')>"
 
 
@@ -85,7 +85,7 @@ class Director(Base):
         "Movie", secondary="movie_directors", back_populates="directors"
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Director (name='{self.name}')>"
 
 
@@ -99,7 +99,7 @@ class Certification(Base):
         "Movie", back_populates="certification"
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Certification (name='{self.name}')>"
 
 
@@ -147,5 +147,5 @@ class Movie(Base):
         UniqueConstraint("name", "year", "time", name="unique_movie_constraint"),
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Movie (name='{self.name}', imdb='{self.imdb}', time='{self.time}')>"

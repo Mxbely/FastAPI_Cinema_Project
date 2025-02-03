@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import timedelta
-from typing import Optional
+from typing import Dict, Optional
 
 
 class JWTAuthManagerInterface(ABC):
@@ -11,7 +11,7 @@ class JWTAuthManagerInterface(ABC):
 
     @abstractmethod
     def create_access_token(
-        self, data: dict, expires_delta: Optional[timedelta] = None
+        self, data: Dict[str, str], expires_delta: Optional[timedelta] = None
     ) -> str:
         """
         Create a new access token.
@@ -20,7 +20,7 @@ class JWTAuthManagerInterface(ABC):
 
     @abstractmethod
     def create_refresh_token(
-        self, data: dict, expires_delta: Optional[timedelta] = None
+        self, data: Dict[str, str], expires_delta: Optional[timedelta] = None
     ) -> str:
         """
         Create a new refresh token.
@@ -28,14 +28,14 @@ class JWTAuthManagerInterface(ABC):
         pass
 
     @abstractmethod
-    def decode_access_token(self, token: str) -> dict:
+    def decode_access_token(self, token: str) -> Dict[str, str]:
         """
         Decode and validate an access token.
         """
         pass
 
     @abstractmethod
-    def decode_refresh_token(self, token: str) -> dict:
+    def decode_refresh_token(self, token: str) -> Dict[str, str]:
         """
         Decode and validate a refresh token.
         """
