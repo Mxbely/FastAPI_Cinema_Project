@@ -17,7 +17,7 @@ PostgresqlSessionLocal = sessionmaker(
 )
 
 
-def get_postgresql_db() -> Session:
+def get_postgresql_db() -> PostgresqlSessionLocal:
     db = PostgresqlSessionLocal()
     try:
         yield db
@@ -26,7 +26,7 @@ def get_postgresql_db() -> Session:
 
 
 @contextmanager
-def get_postgresql_db_contextmanager() -> Session:
+def get_postgresql_db_contextmanager() -> PostgresqlSessionLocal:
     db = PostgresqlSessionLocal()
     try:
         yield db

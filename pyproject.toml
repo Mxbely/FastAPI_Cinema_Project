@@ -37,6 +37,7 @@ pillow = "^11.1.0"
 python-multipart = "^0.0.20"
 gunicorn = "^23.0.0"
 black = "^25.1.0"
+mypy = "^1.14.1"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -73,3 +74,22 @@ ignore = [
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.mypy]
+disable_error_code = [
+    "misc",
+    "name-defined",
+    "valid-type",
+]
+python_version = "3.10"
+ignore_missing_imports = true
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+disallow_untyped_defs = true
+explicit_package_bases = true
+exclude = [
+    "src/database/migrations/.*",
+    "src/config/settings.py",
+    "src/tests/.*",
+]
