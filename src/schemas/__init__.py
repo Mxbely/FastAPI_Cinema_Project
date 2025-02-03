@@ -1,1 +1,1 @@
-from schemas.payments import PaymentCreateSchema, PaymentSchema
+from schemas.payments import PaymentCreateSchema, PaymentSchema, PaymentHistoryResponse
