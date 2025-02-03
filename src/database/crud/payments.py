@@ -1,8 +1,10 @@
+from typing import Type
+
 from fastapi import HTTPException, status
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from database import Order, Payment, PaymentItem
+from database import Order, Payment, PaymentItem, PaymentStatusEnum
 from schemas import PaymentCreateSchema
 
 
@@ -44,3 +46,25 @@ def create_payment_items(
     except Exception as e:
         db.rollback()
         raise Exception(f"An error occurred while creating payment items: {e}")
+
+
+def update_payment_status(
+        payment: Payment | Type[Payment],
+        new_status: PaymentStatusEnum,
+        db: Session,
+) -> Payment | Type[Payment] | None:
+    if payment:
+        payment.status = new_status.value
+        db.commit()
+        db.refresh(payment)
+    return payment
+
+
+def get_payment_by_session_id(
+        session_id: str,
+        db: Session
+) -> Payment | None:
+    try:
+        return db.query(Payment).filter_by(external_payment_id=session_id).first()
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
