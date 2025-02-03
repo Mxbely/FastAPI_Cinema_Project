@@ -569,31 +569,36 @@ def like_or_dislike(
     token_data = jwt_manager.decode_access_token(token)
     user_id = token_data["user_id"]
     user = db.query(User).filter_by(id=user_id).first()
+
     if not user:
         raise HTTPException(
             status_code=404,
             detail="User with the given ID was not found."
         )
+
     movie_like = db.query(MovieLike).filter_by(
         movie_id=movie.id, user_id=user.id
     ).first()
-    if not movie_like:
+
+    if movie_like:
+        movie_like.is_liked = not movie_like.is_liked
+    else:
         movie_like = MovieLike(
             user_id=user_id,
             movie_id=movie_id,
             is_liked=True,
         )
         db.add(movie_like)
-        db.commit()
-        db.refresh(movie_like)
-    else:
-        if movie_like.is_liked:
-            movie_like.is_liked = False
-        else:
-            movie_like.is_liked = True
-        db.refresh(movie_like)
 
-    return MovieLikeResponseSchema.model_validate(movie_like)
+    db.commit()
+    db.refresh(movie_like)
+
+    return MovieLikeResponseSchema(
+        is_liked=movie_like.is_liked,
+        created_at=movie_like.created_at,
+        user=movie_like.user,
+        movie=movie_like.movie,
+    )
 
 
 @router.post("/{movie_id}/favorite/", response_model=MovieFavoriteResponseSchema)
@@ -604,36 +609,44 @@ def favorite_or_unfavorite(
         db: Session = Depends(get_db),
 ):
     movie = db.query(Movie).filter_by(id=movie_id).first()
+
     if not movie:
         raise HTTPException(
             status_code=404,
             detail="Movie with the given ID was not found."
         )
+
     token_data = jwt_manager.decode_access_token(token)
     user_id = token_data["user_id"]
     user = db.query(User).filter_by(id=user_id).first()
+
     if not user:
         raise HTTPException(
             status_code=404,
             detail="User with the given ID was not found."
         )
+
     movie_favorite = db.query(FavoriteMovie).filter_by(
         movie_id=movie.id, user_id=user.id
     ).first()
-    if not movie_favorite:
+
+    if movie_favorite:
+        movie_favorite.is_favorited = not movie_favorite.is_favorited
+
+    else:
         movie_favorite = FavoriteMovie(
             user_id=user_id,
             movie_id=movie_id,
             is_favorited=True,
         )
         db.add(movie_favorite)
-        db.commit()
-        db.refresh(movie_favorite)
-    else:
-        if movie_favorite.is_favorited:
-            movie_favorite.is_favorited = False
-        else:
-            movie_favorite.is_favorited = True
-        db.refresh(movie_favorite)
 
-    return MovieFavoriteResponseSchema.model_validate(movie_favorite)
+    db.commit()
+    db.refresh(movie_favorite)
+
+    return MovieFavoriteResponseSchema(
+        is_favorited=movie_favorite.is_favorited,
+        created_at=movie_favorite.created_at,
+        user=movie_favorite.user,
+        movie=movie_favorite.movie,
+    )
