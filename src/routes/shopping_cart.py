@@ -28,7 +28,7 @@ from database.crud.shopping_cart import (
     get_purchased_movies_from_db,
     get_user_cart,
     is_movie_in_any_cart,
-    process_order_payment_and_clear_cart,
+    process_order_payment_and_clear_cart, delete_movie,
 )
 from database.session_postgresql import get_postgresql_db
 from schemas.accounts import MessageResponseSchema
@@ -287,7 +287,7 @@ def get_user_cart_admin(
     "/admin/movies/{movie_id}",
     response_model=MessageResponseSchema
 )
-def delete_movie(
+def delete_movie_route(
         movie_id: int,
         db: Annotated[Session, Depends(get_postgresql_db)],
         token: Annotated[str, Depends(get_token)],
@@ -309,7 +309,7 @@ def delete_movie(
             detail=str(e)
         )
 
-    movie = get_movie_by_id(db, movie_id)
+    movie = get_movie_by_id(movie_id, db)
     if not movie:
         raise HTTPException(status_code=404, detail="Movie not found")
 

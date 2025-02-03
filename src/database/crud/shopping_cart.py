@@ -136,7 +136,7 @@ def delete_movie(db: Session, movie: Movie) -> None:
     db.commit()
 
 
-def get_purchased_movies_from_db(user: User, db: Session) -> list[Any]:
+def get_purchased_movies_from_db(user: User, db: Session) -> list[Movie]:
     return (
         db.query(Movie)
         .join(CartItem)
