@@ -39,6 +39,7 @@ from schemas.shopping_cart import (
     PurchasedMoviesResponse,
 )
 from security.http import get_token
+from security.token_manager import JWTAuthManager
 from validation.shopping_cart import (
     validate_movie_availability,
     validate_not_in_cart,
@@ -52,7 +53,7 @@ router = APIRouter()
 def get_cart(
         db: Annotated[Session, Depends(get_postgresql_db)],
         token: Annotated[str, Depends(get_token)],
-        jwt_manager: Annotated[object, Depends(get_jwt_auth_manager)]
+        jwt_manager: Annotated[JWTAuthManager, Depends(get_jwt_auth_manager)]
 ) -> CartResponse:
     try:
         payload = jwt_manager.decode_access_token(token)
