@@ -133,7 +133,7 @@ class User(Base):
         return verify_password(raw_password, self._hashed_password)
 
     @validates("email")
-    def validate_email(self, value: str) -> Any:
+    def validate_email(self, key: str, value: str) -> Any:
         return validators.validate_email(value.lower())
 
 
