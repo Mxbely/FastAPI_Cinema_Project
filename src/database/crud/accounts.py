@@ -106,3 +106,12 @@ def create_refresh_token_by_user_id_days_token(
 
 def get_refresh_token_by_refresh_token(db: Session, refresh_token: Any) -> Query | None:
     return db.query(RefreshToken).filter_by(token=refresh_token).first()
+
+
+def get_all_activation_tokens(db: Session):
+    return db.query(ActivationToken).all()
+
+
+def remove_activation_token(db: Session, token: Any) -> None:
+    db.delete(token)
+    db.commit()
