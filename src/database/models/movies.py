@@ -3,16 +3,18 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import (
     DECIMAL,
+    TIMESTAMP,
+    Boolean,
     Float,
     ForeignKey,
     String,
     Text,
     UniqueConstraint,
-    Boolean,
-    TIMESTAMP,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from database import OrderItem, User
 from database.models.base import Base
 
 
@@ -167,13 +169,21 @@ class MovieLike(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
     movie_id: Mapped[int] = mapped_column(ForeignKey("movies.id"), primary_key=True)
     is_liked: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    created_at: Mapped[TIMESTAMP] = mapped_column(TIMESTAMP, nullable=False, server_default=func.now())
+    created_at: Mapped[TIMESTAMP] = mapped_column(
+        TIMESTAMP,
+        nullable=False,
+        server_default=func.now()
+    )
 
     user: Mapped["User"] = relationship("User", back_populates="likes")
     movie: Mapped["Movie"] = relationship("Movie", back_populates="likes")
 
     def __repr__(self):
-        return f"<MovieLike (user_id='{self.user_id}', movie_id='{self.movie_id}', is_liked='{self.is_liked}')>"
+        return (
+            f"<MovieLike (user_id='{self.user_id}', "
+            f"movie_id='{self.movie_id}', "
+            f"is_liked='{self.is_liked}')>"
+        )
 
 
 class FavoriteMovie(Base):
@@ -182,7 +192,11 @@ class FavoriteMovie(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
     movie_id: Mapped[int] = mapped_column(ForeignKey("movies.id"), primary_key=True)
     is_favorited: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    created_at: Mapped[TIMESTAMP] = mapped_column(TIMESTAMP, nullable=False, server_default=func.now())
+    created_at: Mapped[TIMESTAMP] = mapped_column(
+        TIMESTAMP,
+        nullable=False,
+        server_default=func.now()
+    )
 
     user: Mapped["User"] = relationship("User", back_populates="favorites")
     movie: Mapped["Movie"] = relationship("Movie", back_populates="favorites")

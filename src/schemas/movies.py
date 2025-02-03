@@ -1,9 +1,9 @@
 import enum
 from datetime import datetime
+from typing import List, Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from typing import List, Optional
 
 from schemas.accounts import UserRegistrationResponseSchema
 
@@ -61,7 +61,6 @@ class MovieListResponseSchema(BaseModel):
 
 
 class MovieBaseSchema(BaseModel):
-    # uuid: UUID = Field(default_factory=uuid4)
     name: str = Field(..., max_length=255)
     year: int
     time: int = Field(..., ge=0)
@@ -79,14 +78,16 @@ class MovieBaseSchema(BaseModel):
         first_movie_year = 1888
         current_year = datetime.now().year
         if value < first_movie_year or value > current_year:
-            raise ValueError(f"Year must be between {first_movie_year} and {current_year}.")
+            raise ValueError(
+                f"Year must be between {first_movie_year} and {current_year}."
+            )
         return value
 
 
 class MovieCreateSchema(MovieBaseSchema):
     meta_score: Optional[float] = Field(None, ge=0, le=100)
     gross: Optional[float] = Field(None, ge=0)
-    certification: str # name
+    certification: str
     genres: list[str]
     stars: list[str]
     directors: list[str]
@@ -105,14 +106,14 @@ class MovieDetailSchema(MovieBaseSchema):
     model_config = ConfigDict(from_attributes=True)
 
 
-class MovieUpdateSchema(MovieBaseSchema):
-    name: Optional[str] = Field(..., max_length=255)
+class MovieUpdateSchema(BaseModel):
+    name: Optional[str] = Field(None, max_length=255)
     year: Optional[int]
-    time: Optional[int] = Field(..., ge=0)
-    imdb: Optional[float] = Field(..., ge=0, le=10)
-    votes: Optional[int] = Field(..., ge=0)
+    time: Optional[int] = Field(None, ge=0)
+    imdb: Optional[float] = Field(None, ge=0, le=10)
+    votes: Optional[int] = Field(None, ge=0)
     description: Optional[str]
-    price: Optional[float] = Field(..., ge=0)
+    price: Optional[float] = Field(None, ge=0)
     meta_score: Optional[float] = Field(None, ge=0, le=100)
     gross: Optional[float] = Field(None, ge=0)
 

@@ -1,23 +1,10 @@
 from typing import Optional
+
 from sqlalchemy.orm import Session, joinedload
 
-from database.models.movies import MovieLike, FavoriteMovie
-from database import (
-
-    Movie,
-    Certification, 
-    Genre,
-    Star,
-    Director,
-    User
-)
-from schemas.movies import (
-    MovieSortEnum,
-    MovieCreateSchema,
-    StarsSchema,
-    GenresSchema
-)
-
+from database import Certification, Director, Genre, Movie, Star, User
+from database.models.movies import FavoriteMovie, MovieLike
+from schemas.movies import GenresSchema, MovieCreateSchema, MovieSortEnum, StarsSchema
 
 
 def get_movies_paginated(page: int, per_page: int,db: Session):
