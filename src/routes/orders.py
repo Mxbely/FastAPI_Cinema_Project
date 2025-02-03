@@ -8,6 +8,8 @@ from database.crud.orders import (
     create_order,
     update_order_with_stripe_url,
     get_user_orders,
+    format_order_detail,
+    get_order_by_id,
 )
 from database.models.accounts import User
 from database.models.orders import OrderStatusEnum
@@ -85,17 +87,16 @@ def get_user_orders_route(
 Endpoint: GET /orders/{order_id}/
 Description: Allows user to view details about order.
 """
+@router.get(
+    "/orders/{order_id}/",
+    response_model=OrderItemResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
+def get_order_detail(
+    order_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> OrderItemResponseSchema:
+    order = get_order_by_id(db, order_id, current_user.id)
 
-
-"""
-4. Update order  
-Endpoint: PATCH /orders/{order_id}/
-Description: Allows user to update order.
-"""
-
-
-"""
-4. Delete order  
-Endpoint: DELETE /orders/{order_id}/
-Description: Allows user to delete order.
-"""
+    return format_order_detail(order)
