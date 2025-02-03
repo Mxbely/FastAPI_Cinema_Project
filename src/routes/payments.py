@@ -32,13 +32,13 @@ router = APIRouter()
 
 @router.get("/", response_model=Page[PaymentHistoryResponse])
 def read_payments(
-        user_id: Optional[int] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-        payment_status: Optional[PaymentStatusEnum] = None,
-        db: Session = Depends(get_db),
-        token: str = Depends(get_token),
-        jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
+    user_id: Optional[int] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    payment_status: Optional[PaymentStatusEnum] = None,
+    db: Session = Depends(get_db),
+    token: str = Depends(get_token),
+    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
 ) -> Page[PaymentHistoryResponse] | MessageResponseSchema:
     user = retrieve_user_from_token(db, token, jwt_manager)
 
@@ -61,10 +61,10 @@ def read_payments(
 
 @router.get("/success")
 def payment_success(
-        session_id: Annotated[str, Query(max_length=500)],
-        db: Session = Depends(get_db),
-        token: str = Depends(get_token),
-        jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
+    session_id: Annotated[str, Query(max_length=500)],
+    db: Session = Depends(get_db),
+    token: str = Depends(get_token),
+    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
 ) -> MessageResponseSchema:
     retrieve_user_from_token(db, token, jwt_manager)
 
@@ -108,10 +108,10 @@ def payment_success(
 
 @router.get("/cancel")
 def payment_cancel(
-        session_id: Annotated[str, Query(max_length=500)],
-        db: Session = Depends(get_db),
-        token: str = Depends(get_token),
-        jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
+    session_id: Annotated[str, Query(max_length=500)],
+    db: Session = Depends(get_db),
+    token: str = Depends(get_token),
+    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
 ) -> MessageResponseSchema:
     retrieve_user_from_token(db, token, jwt_manager)
 
@@ -164,10 +164,10 @@ def payment_cancel(
 
 @router.post("/refund")
 def payment_refund(
-        order_id: int,
-        db: Session = Depends(get_db),
-        token: str = Depends(get_token),
-        jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
+    order_id: int,
+    db: Session = Depends(get_db),
+    token: str = Depends(get_token),
+    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
 ) -> MessageResponseSchema:
     user = retrieve_user_from_token(db, token, jwt_manager)
 
@@ -215,10 +215,10 @@ def payment_refund(
 
 @router.post("/stripe-webhook")
 async def stripe_webhook(
-        request: Request,
-        background_tasks: BackgroundTasks,
-        db: Session = Depends(get_db),
-        email_sender: EmailSenderInterface = Depends(get_accounts_email_notificator)
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    email_sender: EmailSenderInterface = Depends(get_accounts_email_notificator)
 ) -> MessageResponseSchema:
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
