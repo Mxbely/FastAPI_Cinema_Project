@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import timedelta
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 
 class JWTAuthManagerInterface(ABC):

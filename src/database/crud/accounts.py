@@ -1,5 +1,6 @@
 from idlelib.query import Query
 from typing import Any
+
 from sqlalchemy.orm import Session
 
 from database import ActivationToken, PasswordResetToken, RefreshToken, User, UserGroup
@@ -25,7 +26,12 @@ def create_user_group_by_name(db: Session, name: str) -> UserGroup:
     return user_group
 
 
-def create_user_by_email_password_group_id(db: Session, email: str, password: str, group_id: int) -> Any:
+def create_user_by_email_password_group_id(
+        db: Session,
+        email: str,
+        password: str,
+        group_id: int
+) -> Any:
     new_user = User.create(
         email=str(email),
         raw_password=password,
@@ -42,7 +48,11 @@ def create_user_by_email_password_group_id(db: Session, email: str, password: st
     return new_user, activation_token
 
 
-def get_activation_token_by_email_token(db: Session, email: str, token: Any) -> Query | None:
+def get_activation_token_by_email_token(
+        db: Session,
+        email: str,
+        token: Any
+) -> Query | None:
     return (
         db.query(ActivationToken)
         .join(User)
@@ -78,7 +88,12 @@ def db_rollback(db: Session) -> None:
     db.rollback()
 
 
-def create_refresh_token_by_user_id_days_token(db: Session, user_id: int, days_valid: int, token: Any) -> None:
+def create_refresh_token_by_user_id_days_token(
+        db: Session,
+        user_id: int,
+        days_valid: int,
+        token: Any
+) -> None:
     refresh_token = RefreshToken.create(
         user_id=user_id,
         days_valid=days_valid,

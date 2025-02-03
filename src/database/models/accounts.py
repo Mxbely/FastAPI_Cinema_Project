@@ -1,6 +1,6 @@
 import enum
 from datetime import date, datetime, timedelta, timezone
-from typing import List, Optional, AnyStr, Any
+from typing import Any, AnyStr, List, Optional
 
 from sqlalchemy import (
     Boolean,
