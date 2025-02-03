@@ -3,13 +3,7 @@ from typing import Type
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from database import (
-    Cart,
-    User,
-    Movie,
-    CartItem,
-    Order
-)
+from database import Cart, CartItem, Movie, Order, User
 from schemas.shopping_cart import CartItemDetail
 
 

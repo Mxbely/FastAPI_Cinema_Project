@@ -1,46 +1,41 @@
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException,
-    status
-)
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from config import get_jwt_auth_manager
 from database import (
     CartItem,
-    User,
+    Movie,
     Order,
-    PaymentItem,
     OrderItem,
     Payment,
+    PaymentItem,
     PaymentStatusEnum,
+    User,
     UserGroupEnum,
-    Movie
+)
+from database.crud.shopping_cart import (
+    add_cart_item,
+    create_cart,
+    delete_cart_item,
+    get_cart_item,
+    get_cart_items_details,
+    get_movie_by_id,
+    get_purchased_movies_from_db,
+    get_user_cart,
 )
 from database.session_postgresql import get_postgresql_db
 from schemas.accounts import MessageResponseSchema
 from schemas.shopping_cart import (
     CartCreate,
-    CartResponse,
     CartItemResponse,
-    PurchasedMoviesResponse
-)
-from database.crud.shopping_cart import (
-    get_user_cart,
-    get_movie_by_id,
-    get_cart_item,
-    create_cart,
-    add_cart_item,
-    delete_cart_item,
-    get_purchased_movies_from_db,
-    get_cart_items_details
+    CartResponse,
+    PurchasedMoviesResponse,
 )
 from security.http import get_token
 from validation.shopping_cart import (
+    validate_movie_availability,
     validate_not_in_cart,
     validate_not_purchased,
-    validate_movie_availability
 )
 
 router = APIRouter()

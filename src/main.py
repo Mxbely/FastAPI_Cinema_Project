@@ -3,7 +3,6 @@ from fastapi import FastAPI
 from routes import accounts_router, profiles_router
 from routes.shopping_cart import router as shopping_carts_router
 
-
 app = FastAPI(
     title="Movies Cinema",
 )

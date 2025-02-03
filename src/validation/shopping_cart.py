@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from database import Movie, User, CartItem, Cart
+from database import Cart, CartItem, Movie, User
 
 
 def validate_movie_availability(movie: Movie):
