@@ -1,18 +1,55 @@
-from typing import List, Optional
-
-from fastapi import APIRouter, Query, Depends, HTTPException, requests
-from sqlalchemy.orm import Session, joinedload
-
+from typing import Optional
+from sqlalchemy.orm import Session
 from config import get_jwt_auth_manager
-from database import get_db, Movie, Certification, Genre, Star, Director
-from database.crud.movies import get_movies_paginated, filter_movies
-from database.models.accounts import TokenBase, User
-from database.models.movies import MovieLike, FavoriteMovie
-from schemas.movies import MovieListResponseSchema, MovieListItemSchema, MovieDetailSchema, MovieCreateSchema, \
-    MovieUpdateSchema, StarsSchema, StarsResponseSchema, \
-    GenresSchema, GenreResponseSchema, MovieLikeResponseSchema, MovieFavoriteResponseSchema, MovieSortEnum
 from security.http import get_token
 from security.interfaces import JWTAuthManagerInterface
+from fastapi import (
+    APIRouter,
+    Query,
+    Depends,
+    HTTPException
+)
+
+from database.models.movies import MovieLike, FavoriteMovie
+from database import (
+    get_db,
+    Movie,
+    Genre,
+    Star
+)
+from database.crud.movies import (
+    filter_movies,
+    get_movie_by_name,
+    get_or_create_genres,
+    get_or_create_stars,
+    get_or_create_directors,
+    get_or_create_certification,
+    get_detail_movies_by_id,
+    get_movie_by_id,
+    get_star_by_name,
+    get_all_stars,
+    get_star_by_id,
+    get_genre_by_name,
+    get_all_genres,
+    get_genre_by_id,
+    get_user_by_id,
+    get_liked_movie,
+    get_favourite_movie
+)
+from schemas.movies import (
+    MovieListResponseSchema,
+    MovieListItemSchema,
+    MovieDetailSchema,
+    MovieCreateSchema,
+    MovieUpdateSchema,
+    StarsSchema,
+    StarsResponseSchema,
+    GenresSchema,
+    GenreResponseSchema,
+    MovieLikeResponseSchema,
+    MovieFavoriteResponseSchema,
+    MovieSortEnum
+)
 
 router = APIRouter()
 
@@ -38,49 +75,6 @@ router = APIRouter()
         }
     }
 )
-# def movie_list(
-#         page: int = Query(1, ge=1, description="Page number (1-based index)"),
-#         per_page: int = Query(10, ge=1, le=20, description="Number of items per page"),
-#         db: Session = Depends(get_db),
-# ) -> MovieListResponseSchema:
-#     """
-#     Fetch a paginated list of movies from the database.
-#
-#     This function retrieves a paginated list of movies, allowing the client to specify
-#     the page number and the number of items per page. It calculates the total pages
-#     and provides links to the previous and next pages when applicable.
-#
-#     :param page: The page number to retrieve (1-based index, must be >= 1).
-#     :type page: int
-#     :param per_page: The number of items to display per page (must be between 1 and 20).
-#     :type per_page: int
-#     :param db: The SQLAlchemy database session (provided via dependency injection).
-#     :type db: Session
-#
-#     :return: A response containing the paginated list of movies and metadata.
-#     :rtype: MovieListResponseSchema
-#
-#     :raises HTTPException: Raises a 404 error if no movies are found for the requested page.
-#     """
-#     total_items, movies = get_movies_paginated(page, per_page, db)
-#
-#     if not movies:
-#         raise HTTPException(status_code=404, detail="No movies found.")
-#
-#     movie_list = [
-#         MovieListItemSchema.model_validate(movie)
-#         for movie in movies
-#     ]
-#
-#     total_pages = (total_items + per_page - 1) // per_page
-#
-#     return MovieListResponseSchema(
-#         movies=movie_list,
-#         prev_page=f"/cinema/movies/?page={page - 1}&per_page={per_page}" if page > 1 else None,
-#         next_page=f"/cinema/movies/?page={page + 1}&per_page={per_page}" if page < total_pages else None,
-#         total_pages=total_pages,
-#         total_items=total_items,
-#     )
 def get_movie_list(
         page: int = Query(1, ge=1, description="Page number (1-based index)"),
         per_page: int = Query(10, ge=1, le=20, description="Number of items per page"),
@@ -183,17 +177,7 @@ def movie_detail(
 
     :raises HTTPException: Raises a 404 error if the movie with the given ID is not found.
     """
-    movie = (
-        db.query(Movie)
-        .options(
-            joinedload(Movie.certification),
-            joinedload(Movie.genres),
-            joinedload(Movie.stars),
-            joinedload(Movie.directors),
-        )
-        .filter(Movie.id == movie_id)
-        .first()
-    )
+    movie = get_detail_movies_by_id(db, movie_id)
 
     if not movie:
         raise HTTPException(
@@ -250,9 +234,7 @@ def create_movie(
 
     :raises HTTPException: Raises a 400 error for invalid input.
     """
-    existing_movie = db.query(Movie).filter(
-        Movie.name == movie_data.name
-    ).first()
+    existing_movie = get_movie_by_name(db, movie_data)
 
     if existing_movie:
         raise HTTPException(
@@ -261,39 +243,10 @@ def create_movie(
         )
 
     try:
-        certification = db.query(Certification).filter_by(name=movie_data.certification).first()
-        if not certification:
-            certification = Certification(name=movie_data.certification)
-            db.add(certification)
-            db.commit()
-            db.refresh(certification)
-
-        genres = []
-        for genre_name in movie_data.genres:
-            genre = db.query(Genre).filter_by(name=genre_name).first()
-            if not genre:
-                genre = Genre(name=genre_name)
-                db.add(genre)
-                db.flush()
-            genres.append(genre)
-
-        stars = []
-        for star_name in movie_data.stars:
-            star = db.query(Star).filter_by(name=star_name).first()
-            if not star:
-                star = Star(name=star_name)
-                db.add(star)
-                db.flush()
-            stars.append(star)
-
-        directors = []
-        for director_name in movie_data.directors:
-            director = db.query(Director).filter_by(name=director_name).first()
-            if not director:
-                director = Director(name=director_name)
-                db.add(director)
-                db.flush()
-            directors.append(director)
+        certification = get_or_create_certification(db, movie_data)
+        genres = get_or_create_genres(db, movie_data)
+        stars = get_or_create_stars(db, movie_data)
+        directors = get_or_create_directors(db, movie_data)
 
         movie = Movie(
             name=movie_data.name,
@@ -368,7 +321,8 @@ def update_movie(
     :return: A response indicating the successful update of the movie.
     :rtype: None
     """
-    movie = db.query(Movie).filter(Movie.id == movie_id).first()
+    movie = get_movie_by_id(db, movie_id)
+
     if not movie:
         raise HTTPException(
             status_code=404,
@@ -431,7 +385,7 @@ def delete_movie(
     :return: A response indicating the successful deletion of the movie.
     :rtype: None
     """
-    movie = db.query(Movie).filter(Movie.id == movie_id).first()
+    movie = get_movie_by_id(db, movie_id)
 
     if not movie:
         raise HTTPException(
@@ -449,7 +403,7 @@ def create_star(
         stars_data: StarsSchema,
         db: Session = Depends(get_db),
 ):
-    star = db.query(Star).filter_by(name=stars_data.name).first()
+    star = get_star_by_name(db, stars_data)
     if star:
         raise HTTPException(
             status_code=400,
@@ -468,7 +422,7 @@ def create_star(
 def star_list(
         db: Session = Depends(get_db),
 ):
-    return db.query(Star).all()
+    return get_all_stars(db)
 
 
 @router.patch("/stars/{star_id}/")
@@ -477,7 +431,7 @@ def star_update(
         star_data: StarsSchema,
         db: Session = Depends(get_db),
 ):
-    star = db.query(Star).filter_by(id=star_id).first()
+    star = get_star_by_id(db, star_id)
 
     if not star:
         raise HTTPException(
@@ -496,7 +450,7 @@ def star_delete(
         star_id: int,
         db: Session = Depends(get_db),
 ):
-    star = db.query(Star).filter_by(id=star_id).first()
+    star = get_star_by_id(db, star_id)
 
     if not star:
         raise HTTPException(
@@ -509,15 +463,12 @@ def star_delete(
     return {"detail": "Star deleted successfully."}
 
 
-# ====================================================
-
-
 @router.post("/genres/")
 def create_genre(
         genres_data: GenresSchema,
         db: Session = Depends(get_db),
 ):
-    genre = db.query(Genre).filter_by(name=genres_data.name).first()
+    genre = get_genre_by_name(db, genres_data)
     if genre:
         raise HTTPException(
             status_code=400,
@@ -536,7 +487,7 @@ def create_genre(
 def genre_list(
         db: Session = Depends(get_db),
 ):
-    return db.query(Genre).all()
+    return get_all_genres(db)
 
 
 @router.get("/genres/{genre_id}/")
@@ -544,7 +495,7 @@ def genre_detail(
         genre_id: int,
         db: Session = Depends(get_db),
 ):
-    genre = db.query(Genre).filter_by(id=genre_id).first()
+    genre = get_genre_by_id(db, genre_id)
 
     if not genre:
         raise HTTPException(
@@ -561,7 +512,7 @@ def genre_update(
         genre_data: GenresSchema,
         db: Session = Depends(get_db),
 ):
-    genre = db.query(Genre).filter_by(id=genre_id).first()
+    genre = get_genre_by_id(db, genre_id)
 
     if not genre:
         raise HTTPException(
@@ -580,7 +531,7 @@ def genre_delete(
         genre_id: int,
         db: Session = Depends(get_db),
 ):
-    genre = db.query(Genre).filter_by(id=genre_id).first()
+    genre = get_genre_by_id(db, genre_id)
 
     if not genre:
         raise HTTPException(
@@ -600,7 +551,7 @@ def like_or_dislike(
         jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager),
         db: Session = Depends(get_db),
 ):
-    movie = db.query(Movie).filter_by(id=movie_id).first()
+    movie = get_movie_by_id(db, movie_id)
     if not movie:
         raise HTTPException(
             status_code=404,
@@ -608,7 +559,7 @@ def like_or_dislike(
         )
     token_data = jwt_manager.decode_access_token(token)
     user_id = token_data["user_id"]
-    user = db.query(User).filter_by(id=user_id).first()
+    user = get_user_by_id(db, user_id)
 
     if not user:
         raise HTTPException(
@@ -616,9 +567,7 @@ def like_or_dislike(
             detail="User with the given ID was not found."
         )
 
-    movie_like = db.query(MovieLike).filter_by(
-        movie_id=movie.id, user_id=user.id
-    ).first()
+    movie_like = get_liked_movie(db, movie, user)
 
     if movie_like:
         movie_like.is_liked = not movie_like.is_liked
@@ -648,7 +597,7 @@ def favorite_or_unfavorite(
         jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager),
         db: Session = Depends(get_db),
 ):
-    movie = db.query(Movie).filter_by(id=movie_id).first()
+    movie = get_movie_by_id(db, movie_id)
 
     if not movie:
         raise HTTPException(
@@ -658,7 +607,7 @@ def favorite_or_unfavorite(
 
     token_data = jwt_manager.decode_access_token(token)
     user_id = token_data["user_id"]
-    user = db.query(User).filter_by(id=user_id).first()
+    user = get_user_by_id(db, user_id)
 
     if not user:
         raise HTTPException(
@@ -666,9 +615,7 @@ def favorite_or_unfavorite(
             detail="User with the given ID was not found."
         )
 
-    movie_favorite = db.query(FavoriteMovie).filter_by(
-        movie_id=movie.id, user_id=user.id
-    ).first()
+    movie_favorite = get_favourite_movie(db, movie, user)
 
     if movie_favorite:
         movie_favorite.is_favorited = not movie_favorite.is_favorited

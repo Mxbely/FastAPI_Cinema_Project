@@ -1,12 +1,23 @@
-from typing import List, Optional
+from typing import Optional
+from sqlalchemy.orm import Session, joinedload
 
-from sqlalchemy.orm import Session
-from sqlalchemy import asc, desc
-from database import Movie, Genre
-from schemas.movies import MovieSortEnum
+from database.models.movies import MovieLike, FavoriteMovie
+from database import (
 
+    Movie,
+    Certification, 
+    Genre,
+    Star,
+    Director,
+    User
+)
+from schemas.movies import (
+    MovieSortEnum,
+    MovieCreateSchema,
+    StarsSchema,
+    GenresSchema
+)
 
-# from schemas.movies import MovieFilter
 
 
 def get_movies_paginated(page: int, per_page: int,db: Session):
@@ -66,3 +77,114 @@ def filter_movies(db: Session, filters: dict, sort_by: Optional[MovieSortEnum] =
             query = query.order_by(Movie.imdb.desc())
 
     return query.all()
+
+def get_detail_movies_by_id(db: Session, movie_id: int):
+    return (
+        db.query(Movie)
+        .options(
+            joinedload(Movie.certification),
+            joinedload(Movie.genres),
+            joinedload(Movie.stars),
+            joinedload(Movie.directors),
+        )
+        .filter(Movie.id == movie_id)
+        .first()
+    )
+
+def get_movie_by_id(db: Session, movie_id: int):
+    return db.query(Movie).filter(Movie.id == movie_id).first()
+
+
+def get_movie_by_name(db: Session, movie_data: MovieCreateSchema):
+    return (
+        db.query(Movie).filter(
+            Movie.name == movie_data.name
+        ).first()
+    )
+
+def get_certification_by_name(db: Session, movie_data: MovieCreateSchema):
+    return db.query(Certification).filter_by(name=movie_data.certification).first()
+
+def get_or_create_certification(db: Session, movie_data: MovieCreateSchema):
+    certification = get_certification_by_name(db, movie_data)
+    if not certification:
+        certification = Certification(name=movie_data.certification)
+        db.add(certification)
+        db.commit()
+        db.refresh(certification)
+
+    return certification
+
+def get_genre_by_id(db: Session, genre_id: int):
+    return db.query(Genre).filter_by(id=genre_id).first()
+
+def get_genre_by_name(db: Session, genres_data: GenresSchema):
+    return db.query(Genre).filter_by(name=genres_data.name).first()
+
+def get_all_genres(db: Session):
+    return db.query(Genre).all()
+
+def get_or_create_genres(db: Session, movie_data: MovieCreateSchema):
+    genres = []
+
+    for genre_name in movie_data.genres:
+        genre = db.query(Genre).filter_by(name=genre_name).first()
+        if not genre:
+            genre = Genre(name=genre_name)
+            db.add(genre)
+            db.flush()
+        genres.append(genre)
+
+    return genres
+
+def get_star_by_name(db:Session, stars_data: StarsSchema):
+    return db.query(Star).filter_by(name=stars_data.name).first()
+
+def get_star_by_id(db: Session, star_id: int):
+    return db.query(Star).filter_by(id=star_id).first()
+
+def get_all_stars(db: Session):
+    return db.query(Star).all()
+
+def get_or_create_stars(db: Session, movie_data: MovieCreateSchema):
+    stars = []
+
+    for star_name in movie_data.stars:
+        star = db.query(Star).filter_by(name=star_name).first()
+        if not star:
+            star = Star(name=star_name)
+            db.add(star)
+            db.flush()
+        stars.append(star)
+
+    return stars
+
+def get_or_create_directors(db: Session, movie_data: MovieCreateSchema):
+    directors = []
+
+    for director_name in movie_data.directors:
+        director = db.query(Director).filter_by(name=director_name).first()
+        if not director:
+            director = Director(name=director_name)
+            db.add(director)
+            db.flush()
+        directors.append(director)
+
+    return directors
+
+def get_user_by_id(db: Session, user_id: int):
+    return db.query(User).filter_by(id=user_id).first()
+
+def get_liked_movie(db: Session, movie: Movie, user: User):
+    return (
+        db.query(MovieLike).filter_by(
+            movie_id=movie.id, user_id=user.id
+        ).first()
+    )
+
+def get_favourite_movie(db: Session, movie: Movie, user: User):
+    return (
+        db.query(FavoriteMovie).filter_by(
+            movie_id=movie.id, user_id=user.id
+        ).first()
+    )
