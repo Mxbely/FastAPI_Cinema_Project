@@ -1,6 +1,6 @@
 import enum
 from datetime import date, datetime, timedelta, timezone
-from typing import Any, AnyStr, List, Optional
+from typing import Any, List, Optional
 
 from sqlalchemy import (
     Boolean,
@@ -133,7 +133,7 @@ class User(Base):
         return verify_password(raw_password, self._hashed_password)
 
     @validates("email")
-    def validate_email(self, value: str) -> Any:
+    def validate_email(self, key: None, value: str) -> Any:
         return validators.validate_email(value.lower())
 
 
@@ -191,9 +191,11 @@ class ActivationToken(TokenBase):
     __table_args__ = (UniqueConstraint("user_id"),)
 
     def __repr__(self) -> str:
-        return (f"<ActivationToken(id={self.id}, "
-                f"token={self.token}, "
-                f"expires_at={self.expires_at})>")
+        return (
+            f"<ActivationToken(id={self.id}, "
+            f"token={self.token}, "
+            f"expires_at={self.expires_at})>"
+        )
 
 
 class PasswordResetToken(TokenBase):
@@ -204,9 +206,11 @@ class PasswordResetToken(TokenBase):
     __table_args__ = (UniqueConstraint("user_id"),)
 
     def __repr__(self) -> str:
-        return (f"<PasswordResetToken(id={self.id}, "
-                f"token={self.token}, "
-                f"expires_at={self.expires_at})>")
+        return (
+            f"<PasswordResetToken(id={self.id}, "
+            f"token={self.token}, "
+            f"expires_at={self.expires_at})>"
+        )
 
 
 class RefreshToken(TokenBase):
@@ -230,6 +234,8 @@ class RefreshToken(TokenBase):
         return cls(user_id=user_id, expires_at=expires_at, token=token)
 
     def __repr__(self) -> str:
-        return (f"<RefreshToken(id={self.id}, "
-                f"token={self.token}, "
-                f"expires_at={self.expires_at})>")
+        return (
+            f"<RefreshToken(id={self.id}, "
+            f"token={self.token}, "
+            f"expires_at={self.expires_at})>"
+        )

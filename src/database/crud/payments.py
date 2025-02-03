@@ -49,9 +49,9 @@ def create_payment_items(
 
 
 def update_payment_status(
-        payment: Payment | Type[Payment],
-        new_status: PaymentStatusEnum,
-        db: Session,
+    payment: Payment | Type[Payment],
+    new_status: PaymentStatusEnum,
+    db: Session,
 ) -> Payment | Type[Payment] | None:
     if payment:
         payment.status = new_status
@@ -60,10 +60,7 @@ def update_payment_status(
     return payment
 
 
-def get_payment_by_session_id(
-        session_id: str,
-        db: Session
-) -> Payment | None:
+def get_payment_by_session_id(session_id: str, db: Session) -> Payment | None:
     try:
         return db.query(Payment).filter_by(external_payment_id=session_id).first()
     except SQLAlchemyError as e:

@@ -18,6 +18,7 @@ from database.models.movies import (
     MovieStars,
     Star,
 )
+from database.models.shoping_cart import Cart
 from database.models.orders import Order, OrderItem
 from database.models.payments import Payment, PaymentItem, PaymentStatusEnum
 from database.models.shoping_cart import Cart, CartItem

@@ -11,14 +11,11 @@ from security.token_manager import JWTAuthManager
 
 SQLITE_DATABASE_URL = "sqlite:///:memory:"
 sqlite_engine = create_engine(
-    SQLITE_DATABASE_URL,
-    connect_args={"check_same_thread": False}
+    SQLITE_DATABASE_URL, connect_args={"check_same_thread": False}
 )
 sqlite_connection = sqlite_engine.connect()
 SqliteSessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=sqlite_connection
+    autocommit=False, autoflush=False, bind=sqlite_connection
 )
 
 
@@ -35,6 +32,7 @@ def db_session() -> Session:
 def client(db_session):
     def override_get_db():
         yield db_session
+
     app.dependency_overrides[get_db] = override_get_db
     return TestClient(app)
 
@@ -64,5 +62,5 @@ def jwt_manager(settings):
     return JWTAuthManager(
         secret_key_access=settings.SECRET_KEY_ACCESS,
         secret_key_refresh=settings.SECRET_KEY_REFRESH,
-        algorithm=settings.JWT_SIGNING_ALGORITHM
+        algorithm=settings.JWT_SIGNING_ALGORITHM,
     )

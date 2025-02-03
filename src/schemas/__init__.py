@@ -3,3 +3,10 @@ from schemas.payments import (
     PaymentHistoryResponse,
     PaymentSchema,
 )
+from schemas.orders import (
+    MessageResponseSchema,
+    OrderItemResponseSchema,
+)
+from schemas.movies import (
+    MovieListItemSchema,
+)

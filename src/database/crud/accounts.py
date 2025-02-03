@@ -27,10 +27,7 @@ def create_user_group_by_name(db: Session, name: str) -> UserGroup:
 
 
 def create_user_by_email_password_group_id(
-        db: Session,
-        email: str,
-        password: str,
-        group_id: int
+    db: Session, email: str, password: str, group_id: int
 ) -> Any:
     new_user = User.create(
         email=str(email),
@@ -49,9 +46,7 @@ def create_user_by_email_password_group_id(
 
 
 def get_activation_token_by_email_token(
-        db: Session,
-        email: str,
-        token: Any
+    db: Session, email: str, token: Any
 ) -> Query | None:
     return (
         db.query(ActivationToken)
@@ -89,10 +84,7 @@ def db_rollback(db: Session) -> None:
 
 
 def create_refresh_token_by_user_id_days_token(
-        db: Session,
-        user_id: int,
-        days_valid: int,
-        token: Any
+    db: Session, user_id: int, days_valid: int, token: Any
 ) -> None:
     refresh_token = RefreshToken.create(
         user_id=user_id,

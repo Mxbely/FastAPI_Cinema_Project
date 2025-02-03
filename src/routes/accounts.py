@@ -62,14 +62,14 @@ router = APIRouter()
                 "application/json": {
                     "example": {
                         "detail": "A user with this email "
-                                  "test@example.com already exists."
+                        "test@example.com already exists."
                     }
                 }
             },
         },
         500: {
             "description": "Internal Server Error - "
-                           "An error occurred during user creation.",
+            "An error occurred during user creation.",
             "content": {
                 "application/json": {
                     "example": {"detail": "An error occurred during user creation."}
@@ -110,7 +110,7 @@ def register_user(
             db=db,
             email=user_data.email,
             password=user_data.password,
-            group_id=user_group.id
+            group_id=user_group.id,
         )
     except SQLAlchemyError:
         raise HTTPException(
@@ -167,9 +167,7 @@ def activate_account(
     and deletes the token. If invalid or expired, raises an appropriate error.
     """
     token_record = get_activation_token_by_email_token(
-        db=db,
-        email=activation_data.email,
-        token=activation_data.token
+        db=db, email=activation_data.email, token=activation_data.token
     )
 
     if not token_record or cast(datetime, token_record.expires_at).replace(
@@ -233,7 +231,7 @@ def request_password_reset_token(
     if not user or not user.is_active:
         return MessageResponseSchema(
             message="If you are registered, "
-                    "you will receive an email with instructions."
+            "you will receive an email with instructions."
         )
 
     delete_password_reset_token_by_user_id(db=db, user_id=user.id)
@@ -280,7 +278,7 @@ def request_password_reset_token(
         },
         500: {
             "description": "Internal Server Error - "
-                           "An error occurred while resetting the password.",
+            "An error occurred while resetting the password.",
             "content": {
                 "application/json": {
                     "example": {
@@ -370,7 +368,7 @@ def reset_password(
         },
         500: {
             "description": "Internal Server Error - "
-                           "An error occurred while processing the request.",
+            "An error occurred while processing the request.",
             "content": {
                 "application/json": {
                     "example": {
@@ -439,7 +437,7 @@ def login_user(
     responses={
         400: {
             "description": "Bad Request - "
-                           "The provided refresh token is invalid or expired.",
+            "The provided refresh token is invalid or expired.",
             "content": {
                 "application/json": {"example": {"detail": "Token has expired."}}
             },
@@ -452,7 +450,7 @@ def login_user(
         },
         404: {
             "description": "Not Found - "
-                           "The user associated with the token does not exist.",
+            "The user associated with the token does not exist.",
             "content": {"application/json": {"example": {"detail": "User not found."}}},
         },
     },
@@ -478,8 +476,7 @@ def refresh_access_token(
         )
 
     refresh_token_record = get_refresh_token_by_refresh_token(
-        db=db,
-        refresh_token=token_data.refresh_token
+        db=db, refresh_token=token_data.refresh_token
     )
 
     if not refresh_token_record:

@@ -30,7 +30,7 @@ def read_payments(
     payment_status: Optional[PaymentStatusEnum] = None,
     db: Session = Depends(get_db),
     token: str = Depends(get_token),
-    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
+    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager),
 ) -> Page[PaymentHistoryResponse] | MessageResponseSchema:
     user = retrieve_user_from_token(db, token, jwt_manager)
 
@@ -56,14 +56,13 @@ def payment_success(
     session_id: Annotated[str, Query(max_length=500)],
     db: Session = Depends(get_db),
     token: str = Depends(get_token),
-    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
+    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager),
 ) -> MessageResponseSchema:
     retrieve_user_from_token(db, token, jwt_manager)
 
     if not session_id:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No session_id provided."
+            status_code=status.HTTP_400_BAD_REQUEST, detail="No session_id provided."
         )
 
     payment = db.query(Payment).filter_by(external_payment_id=session_id).first()
@@ -71,7 +70,7 @@ def payment_success(
     if not payment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Payment with session_id {session_id} not found."
+            detail=f"Payment with session_id {session_id} not found.",
         )
 
     if payment.status == PaymentStatusEnum.SUCCESSFUL:
@@ -84,7 +83,7 @@ def payment_success(
         if not session or session.payment_status != "paid":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Payment was not successful."
+                detail="Payment was not successful.",
             )
         update_payment_status(payment, PaymentStatusEnum.SUCCESSFUL, db)
 
@@ -104,14 +103,13 @@ def payment_cancel(
     session_id: Annotated[str, Query(max_length=500)],
     db: Session = Depends(get_db),
     token: str = Depends(get_token),
-    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
+    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager),
 ) -> MessageResponseSchema:
     retrieve_user_from_token(db, token, jwt_manager)
 
     if not session_id:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No session_id provided."
+            status_code=status.HTTP_400_BAD_REQUEST, detail="No session_id provided."
         )
 
     payment = get_payment_by_session_id(session_id, db)
@@ -119,16 +117,16 @@ def payment_cancel(
     if not payment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Payment with session_id {session_id} not found."
+            detail=f"Payment with session_id {session_id} not found.",
         )
 
     if (
-        payment.status == PaymentStatusEnum.CANCELLED or
-        payment.status == PaymentStatusEnum.SUCCESSFUL
+        payment.status == PaymentStatusEnum.CANCELLED
+        or payment.status == PaymentStatusEnum.SUCCESSFUL
     ):
         return MessageResponseSchema(
             message=f"Payment with session_id {session_id} "
-                    f"was already cancelled or successful."
+            f"was already cancelled or successful."
         )
 
     try:
@@ -136,7 +134,7 @@ def payment_cancel(
         if not session:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Session with id {session_id} not found."
+                detail=f"Session with id {session_id} not found.",
             )
 
         stripe.checkout.Session.expire(session_id)
@@ -160,7 +158,7 @@ def payment_refund(
     order_id: int,
     db: Session = Depends(get_db),
     token: str = Depends(get_token),
-    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
+    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager),
 ) -> MessageResponseSchema:
     user = retrieve_user_from_token(db, token, jwt_manager)
 
@@ -168,32 +166,26 @@ def payment_refund(
 
     if not order:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Order not found."
+            status_code=status.HTTP_404_NOT_FOUND, detail="Order not found."
         )
 
     if order.status != OrderStatusEnum.PAID:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Order was already cancelled."
+            detail="Order was already cancelled.",
         )
 
     payment = db.query(Payment).filter_by(order_id=order_id).first()
 
     if not payment or not payment.external_payment_id:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Payment not found."
+            status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found."
         )
 
     try:
-        session = stripe.checkout.Session.retrieve(
-            payment.external_payment_id
-        )
+        session = stripe.checkout.Session.retrieve(payment.external_payment_id)
 
-        stripe.Refund.create(
-            payment_intent=str(session.payment_intent)
-        )
+        stripe.Refund.create(payment_intent=str(session.payment_intent))
 
         order.status = OrderStatusEnum.CANCELED
         payment.status = PaymentStatusEnum.REFUNDED

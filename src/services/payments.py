@@ -12,23 +12,20 @@ stripe.api_key = get_settings().STRIPE_SECRET_KEY
 
 
 def create_checkout_session(
-    request: Request,
-    order: Order,
-    user_id: int,
-    db: Session
+    request: Request, order: Order, user_id: int, db: Session
 ) -> str | None:
-    existing_payment = db.query(Payment).filter_by(
-        order_id=order.id, status=PaymentStatusEnum.PENDING.value
-    ).first()
+    existing_payment = (
+        db.query(Payment)
+        .filter_by(order_id=order.id, status=PaymentStatusEnum.PENDING.value)
+        .first()
+    )
 
     session = None
     if existing_payment:
         try:
             if hasattr(existing_payment, "external_payment_id"):
                 stripe_external_id = existing_payment.external_payment_id
-                session = stripe.checkout.Session.retrieve(
-                    str(stripe_external_id)
-                )
+                session = stripe.checkout.Session.retrieve(str(stripe_external_id))
         except stripe.StripeError as e:
             handle_stripe_error(e)
 
@@ -41,18 +38,16 @@ def create_checkout_session(
         return None
 
     product_data = " ".join(
-        [
-            f"{item.movie.name} x {item.price_at_order}" for item in order.order_items
-        ]
+        [f"{item.movie.name} x {item.price_at_order}" for item in order.order_items]
     )
 
-    success_url = str(
-        request.url_for("payment_success")
-    ) + "?session_id={CHECKOUT_SESSION_ID}"
+    success_url = (
+        str(request.url_for("payment_success")) + "?session_id={CHECKOUT_SESSION_ID}"
+    )
 
-    cancel_url = str(
-        request.url_for("payment_cancel")
-    ) + "?session_id={CHECKOUT_SESSION_ID}"
+    cancel_url = (
+        str(request.url_for("payment_cancel")) + "?session_id={CHECKOUT_SESSION_ID}"
+    )
 
     try:
         session = stripe.checkout.Session.create(
@@ -78,7 +73,7 @@ def create_checkout_session(
             user_id=user_id,
             order_id=order.id,
             amount=total_amount,
-            external_payment_id=session.id
+            external_payment_id=session.id,
         )
 
         created_payment = create_payment(new_payment, db)

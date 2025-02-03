@@ -34,7 +34,7 @@ class CartItem(Base):
         ForeignKey("movies.id", ondelete="CASCADE"), nullable=False
     )
     added_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default = func.now(), nullable = False
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
     cart: Mapped["Cart"] = relationship("Cart", back_populates="items")
@@ -45,6 +45,8 @@ class CartItem(Base):
     )
 
     def __repr__(self) -> str:
-        return (f"<CartItem(cart_id={self.cart_id}, "
-                f"movie_id={self.movie_id}, "
-                f"added_at={self.added_at})>")
+        return (
+            f"<CartItem(cart_id={self.cart_id}, "
+            f"movie_id={self.movie_id}, "
+            f"added_at={self.added_at})>"
+        )

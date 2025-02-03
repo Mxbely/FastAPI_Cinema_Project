@@ -26,7 +26,7 @@ router = APIRouter()
 def get_current_user(
     token: str = Depends(get_token),
     db: Session = Depends(get_db),
-    jwt_manager: JWTAuthManager = Depends(get_jwt_auth_manager)
+    jwt_manager: JWTAuthManager = Depends(get_jwt_auth_manager),
 ) -> User:
     try:
         token_data = jwt_manager.decode_access_token(token)
@@ -34,13 +34,12 @@ def get_current_user(
         if not user or not user.is_active:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found or not active."
+                detail="User not found or not active.",
             )
         return user
     except TokenExpiredError:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token has expired."
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired."
         )
 
 

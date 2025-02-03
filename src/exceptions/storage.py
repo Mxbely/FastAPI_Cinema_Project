@@ -39,7 +39,6 @@ class S3PermissionError(BaseS3Error):
     """Raised when the client lacks permission to access a resource."""
 
     def __init__(
-            self,
-            message: str = "Insufficient permissions to access S3 resource."
+        self, message: str = "Insufficient permissions to access S3 resource."
     ) -> None:
         super().__init__(message)

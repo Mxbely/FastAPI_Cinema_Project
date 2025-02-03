@@ -15,9 +15,7 @@ app.include_router(
 app.include_router(
     profiles_router, prefix=f"{api_version_prefix}/profiles", tags=["profiles"]
 )
-app.include_router(
-    orders_router, prefix=f"{api_version_prefix}", tags=["orders"]
-)
+app.include_router(orders_router, prefix=f"{api_version_prefix}", tags=["orders"])
 app.include_router(
     payments_router, prefix=f"{api_version_prefix}/payments", tags=["payments"]
 )
