@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi_pagination import add_pagination
 
-from routes import accounts_router, movies_router, payments_router, profiles_router, orders_router
+from routes import (
+    accounts_router, movies_router, payments_router, profiles_router, orders_router
+)
 from routes.shopping_cart import router as shopping_carts_router
 
 app = FastAPI(

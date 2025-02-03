@@ -112,7 +112,9 @@ def get_user_orders(
     return order_list
 
 
-def get_order_by_id(db: Session, order_id: int, current_user_id: int | None = None) -> Order:
+def get_order_by_id(
+        db: Session, order_id: int, current_user_id: int | None = None
+) -> Order:
     """Retrieve an order by ID and check permissions."""
     order = db.query(Order).filter(Order.id == order_id).first()
 
