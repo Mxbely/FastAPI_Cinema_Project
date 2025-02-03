@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 
-from sqlalchemy import DECIMAL, DateTime, ForeignKey, Integer, String
+from sqlalchemy import DECIMAL, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.models.accounts import User
@@ -27,7 +27,7 @@ class Order(Base):
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.now
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     status: Mapped[OrderStatusEnum] = mapped_column(
         String(50), nullable=False, default=OrderStatusEnum.PENDING.value
