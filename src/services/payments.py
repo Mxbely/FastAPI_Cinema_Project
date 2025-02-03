@@ -16,7 +16,7 @@ def create_checkout_session(
     order: Order,
     user_id: int,
     db: Session
-):
+) -> str:
     payment = db.query(Payment).filter_by(
         order_id=order.id, status=PaymentStatusEnum.PENDING.value
     ).first()
