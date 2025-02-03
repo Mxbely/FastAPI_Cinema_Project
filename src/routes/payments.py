@@ -2,52 +2,40 @@ from datetime import datetime
 from typing import Annotated, Optional
 
 import stripe
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi_pagination import LimitOffsetPage
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi_pagination.ext.sqlalchemy import paginate
+from fastapi_pagination.links import Page
 from sqlalchemy.orm import Session
 
 from config import get_jwt_auth_manager
-from database import Order, Payment, PaymentStatusEnum, User, UserGroupEnum, get_db
+from database import Order, Payment, PaymentStatusEnum, UserGroupEnum, get_db
 from database.crud import get_payment_by_session_id, update_payment_status
 from database.models.orders import OrderStatusEnum
-from exceptions import BaseSecurityError, handle_stripe_error
+from exceptions import handle_stripe_error
 from schemas import PaymentHistoryResponse
 from schemas.accounts import MessageResponseSchema
 from security.http import get_token
+from security.interfaces import JWTAuthManagerInterface
+from utils import retrieve_user_from_token
 
 router = APIRouter()
 
 
-@router.get("/", response_model=LimitOffsetPage[PaymentHistoryResponse])
+@router.get("/", response_model=Page[PaymentHistoryResponse])
 def read_payments(
+    request: Request,
     user_id: Optional[int] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     payment_status: Optional[PaymentStatusEnum] = None,
     db: Session = Depends(get_db),
     token: str = Depends(get_token),
-    jwt_manager=Depends(get_jwt_auth_manager)
-):
-    try:
-        payload = jwt_manager.decode_access_token(token)
-        token_user_id = payload.get("user_id")
-    except BaseSecurityError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e)
-        )
-
-    user = db.query(User).filter_by(id=token_user_id).first()
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
+) -> Page[PaymentHistoryResponse] | MessageResponseSchema:
+    user = retrieve_user_from_token(db, token, jwt_manager)
 
     if user.group.name != UserGroupEnum.ADMIN.value:
-        return paginate(db.query(Payment).filter_by(user_id=token_user_id))
+        return paginate(db.query(Payment).filter_by(user_id=user.id))
 
     query = db.query(Payment)
 
@@ -73,8 +61,12 @@ def read_payments(
 @router.get("/success")
 def payment_success(
     session_id: Annotated[str, Query(max_length=500)],
-    db: Session = Depends(get_db)
-):
+    db: Session = Depends(get_db),
+    token: str = Depends(get_token),
+    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
+) -> MessageResponseSchema:
+    retrieve_user_from_token(db, token, jwt_manager)
+
     if not session_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -124,8 +116,12 @@ def payment_success(
 @router.get("/cancel")
 def payment_cancel(
     session_id: Annotated[str, Query(max_length=500)],
-    db: Session = Depends(get_db)
-):
+    db: Session = Depends(get_db),
+    token: str = Depends(get_token),
+    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
+) -> MessageResponseSchema:
+    retrieve_user_from_token(db, token, jwt_manager)
+
     if not session_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -163,6 +159,61 @@ def payment_cancel(
 
     update_payment_status(payment, PaymentStatusEnum.CANCELLED, db)
 
+    order = db.query(Order).filter_by(id=payment.order_id).first()
+    order.status = OrderStatusEnum.CANCELED
+    db.commit()
+
     return MessageResponseSchema(
         message=f"Payment with session_id {session_id} was cancelled."
     )
+
+
+@router.post("/refund")
+def payment_refund(
+    order_id: int,
+    db: Session = Depends(get_db),
+    token: str = Depends(get_token),
+    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
+) -> MessageResponseSchema:
+    user = retrieve_user_from_token(db, token, jwt_manager)
+
+    order = db.query(Order).filter_by(id=order_id, user_id=user.id).first()
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found."
+        )
+
+    if order.status != OrderStatusEnum.PAID:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Order was already cancelled."
+        )
+
+    payment = db.query(Payment).filter_by(order_id=order_id).first()
+
+    if not payment or not payment.external_payment_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Payment not found."
+        )
+
+    try:
+        session = stripe.checkout.Session.retrieve(
+            payment.external_payment_id
+        )
+
+        stripe.Refund.create(
+            payment_intent=session.payment_intent
+        )
+
+        order.status = OrderStatusEnum.CANCELED
+        payment.status = PaymentStatusEnum.REFUNDED
+        db.commit()
+
+        return MessageResponseSchema(
+            message=f"Order with id {order_id} was refunded successfully."
+        )
+    except stripe.error.StripeError as e:
+        handle_stripe_error(e)
