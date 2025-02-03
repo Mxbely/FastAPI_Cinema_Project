@@ -14,7 +14,7 @@ def retrieve_user_id_from_token(
 ) -> int:
     try:
         payload = jwt_manager.decode_access_token(token)
-        token_user_id = payload.get("user_id")
+        token_user_id = int(payload.get("user_id"))
         if not token_user_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
