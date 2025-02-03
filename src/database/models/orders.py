@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum
 
 from sqlalchemy import DECIMAL, DateTime, ForeignKey, Integer, String
@@ -31,7 +32,7 @@ class Order(Base):
     status: Mapped[OrderStatusEnum] = mapped_column(
         String(50), nullable=False, default=OrderStatusEnum.PENDING.value
     )
-    total_amount: Mapped[float | None] = mapped_column(DECIMAL(10, 2))
+    total_amount: Mapped[Decimal | None] = mapped_column(DECIMAL(10, 2))
 
     order_items: Mapped[list["OrderItem"]] = relationship(
         "OrderItem", back_populates="order"
