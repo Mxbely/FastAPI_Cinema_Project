@@ -177,7 +177,7 @@ class MovieLike(Base):
     user: Mapped["User"] = relationship("User", back_populates="likes")
     movie: Mapped["Movie"] = relationship("Movie", back_populates="likes")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"<MovieLike (user_id='{self.user_id}', "
             f"movie_id='{self.movie_id}', "
@@ -200,5 +200,5 @@ class FavoriteMovie(Base):
     user: Mapped["User"] = relationship("User", back_populates="favorites")
     movie: Mapped["Movie"] = relationship("Movie", back_populates="favorites")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<FavoriteMovie (user_id='{self.user_id}', movie_id='{self.movie_id}')>"

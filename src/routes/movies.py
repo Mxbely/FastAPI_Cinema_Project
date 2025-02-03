@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -310,7 +310,7 @@ def update_movie(
     movie_id: int,
     movie_data: MovieUpdateSchema,
     db: Session = Depends(get_db),
-):
+) -> dict[str, str]:
     """
     Update a specific movie by its ID.
 
@@ -377,7 +377,7 @@ def update_movie(
 def delete_movie(
     movie_id: int,
     db: Session = Depends(get_db),
-):
+) -> dict[str, str]:
     """
     Delete a specific movie by its ID.
 
@@ -412,7 +412,7 @@ def delete_movie(
 def create_star(
         stars_data: StarsSchema,
         db: Session = Depends(get_db),
-):
+) -> StarsResponseSchema:
     star = get_star_by_name(db, stars_data)
     if star:
         raise HTTPException(
@@ -431,7 +431,7 @@ def create_star(
 @router.get("/stars/", response_model=list[StarsResponseSchema])
 def star_list(
         db: Session = Depends(get_db),
-):
+) -> list[Star]:
     return get_all_stars(db)
 
 
@@ -440,7 +440,7 @@ def star_update(
         star_id: int,
         star_data: StarsSchema,
         db: Session = Depends(get_db),
-):
+) -> StarsResponseSchema:
     star = get_star_by_id(db, star_id)
 
     if not star:
@@ -459,7 +459,7 @@ def star_update(
 def star_delete(
         star_id: int,
         db: Session = Depends(get_db),
-):
+) -> dict[str, str]:
     star = get_star_by_id(db, star_id)
 
     if not star:
@@ -477,7 +477,7 @@ def star_delete(
 def create_genre(
         genres_data: GenresSchema,
         db: Session = Depends(get_db),
-):
+) -> GenreResponseSchema:
     genre = get_genre_by_name(db, genres_data)
     if genre:
         raise HTTPException(
@@ -496,7 +496,7 @@ def create_genre(
 @router.get("/genres/", response_model=list[GenreResponseSchema])
 def genre_list(
         db: Session = Depends(get_db),
-):
+) -> list[Genre]:
     return get_all_genres(db)
 
 
@@ -504,7 +504,7 @@ def genre_list(
 def genre_detail(
         genre_id: int,
         db: Session = Depends(get_db),
-):
+) -> GenreResponseSchema:
     genre = get_genre_by_id(db, genre_id)
 
     if not genre:
@@ -521,7 +521,7 @@ def genre_update(
         genre_id: int,
         genre_data: GenresSchema,
         db: Session = Depends(get_db),
-):
+) -> GenreResponseSchema:
     genre = get_genre_by_id(db, genre_id)
 
     if not genre:
@@ -540,7 +540,7 @@ def genre_update(
 def genre_delete(
         genre_id: int,
         db: Session = Depends(get_db),
-):
+) -> dict[str, str]:
     genre = get_genre_by_id(db, genre_id)
 
     if not genre:
@@ -560,7 +560,7 @@ def like_or_dislike(
         token: str = Depends(get_token),
         jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager),
         db: Session = Depends(get_db),
-):
+) -> MovieLikeResponseSchema:
     movie = get_movie_by_id(db, movie_id)
     if not movie:
         raise HTTPException(
@@ -606,7 +606,7 @@ def favorite_or_unfavorite(
         token: str = Depends(get_token),
         jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager),
         db: Session = Depends(get_db),
-):
+) -> MovieFavoriteResponseSchema:
     movie = get_movie_by_id(db, movie_id)
 
     if not movie:

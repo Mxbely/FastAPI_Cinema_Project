@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List, Type
 
 from sqlalchemy.orm import Session, joinedload
 
@@ -7,7 +7,7 @@ from database.models.movies import FavoriteMovie, MovieLike
 from schemas.movies import GenresSchema, MovieCreateSchema, MovieSortEnum, StarsSchema
 
 
-def get_movies_paginated(page: int, per_page: int,db: Session):
+def get_movies_paginated(page: int, per_page: int,db: Session) -> [int, list[Movie]]:
     offset = (page - 1) * per_page
 
     query = db.query(Movie).order_by()
@@ -21,11 +21,8 @@ def get_movies_paginated(page: int, per_page: int,db: Session):
 
     return total_items, movies
 
-def check_if_exists(db: Session, query):
-    return db.query(query).first() is not None
 
-
-def filter_movies(db: Session, filters: dict, sort_by: Optional[MovieSortEnum] = None):
+def filter_movies(db: Session, filters: dict[str, str], sort_by: Optional[MovieSortEnum] = None) -> list[Movie]:
     query = db.query(Movie)
 
     if filters.get("name"):
@@ -65,7 +62,7 @@ def filter_movies(db: Session, filters: dict, sort_by: Optional[MovieSortEnum] =
 
     return query.all()
 
-def get_detail_movies_by_id(db: Session, movie_id: int):
+def get_detail_movies_by_id(db: Session, movie_id: int) -> Movie | None:
     return (
         db.query(Movie)
         .options(
@@ -78,21 +75,21 @@ def get_detail_movies_by_id(db: Session, movie_id: int):
         .first()
     )
 
-def get_movie_by_id(db: Session, movie_id: int):
+def get_movie_by_id(db: Session, movie_id: int) -> Movie | None:
     return db.query(Movie).filter(Movie.id == movie_id).first()
 
 
-def get_movie_by_name(db: Session, movie_data: MovieCreateSchema):
+def get_movie_by_name(db: Session, movie_data: MovieCreateSchema) -> Movie | None:
     return (
         db.query(Movie).filter(
             Movie.name == movie_data.name
         ).first()
     )
 
-def get_certification_by_name(db: Session, movie_data: MovieCreateSchema):
+def get_certification_by_name(db: Session, movie_data: MovieCreateSchema) -> Certification | None:
     return db.query(Certification).filter_by(name=movie_data.certification).first()
 
-def get_or_create_certification(db: Session, movie_data: MovieCreateSchema):
+def get_or_create_certification(db: Session, movie_data: MovieCreateSchema) -> Certification:
     certification = get_certification_by_name(db, movie_data)
     if not certification:
         certification = Certification(name=movie_data.certification)
@@ -102,16 +99,16 @@ def get_or_create_certification(db: Session, movie_data: MovieCreateSchema):
 
     return certification
 
-def get_genre_by_id(db: Session, genre_id: int):
+def get_genre_by_id(db: Session, genre_id: int) -> Genre | None:
     return db.query(Genre).filter_by(id=genre_id).first()
 
-def get_genre_by_name(db: Session, genres_data: GenresSchema):
+def get_genre_by_name(db: Session, genres_data: GenresSchema) -> Genre | None:
     return db.query(Genre).filter_by(name=genres_data.name).first()
 
-def get_all_genres(db: Session):
+def get_all_genres(db: Session) -> list[Genre]:
     return db.query(Genre).all()
 
-def get_or_create_genres(db: Session, movie_data: MovieCreateSchema):
+def get_or_create_genres(db: Session, movie_data: MovieCreateSchema) -> list[Genre | Type[Genre]]:
     genres = []
 
     for genre_name in movie_data.genres:
@@ -124,16 +121,16 @@ def get_or_create_genres(db: Session, movie_data: MovieCreateSchema):
 
     return genres
 
-def get_star_by_name(db:Session, stars_data: StarsSchema):
+def get_star_by_name(db:Session, stars_data: StarsSchema) -> Star | None:
     return db.query(Star).filter_by(name=stars_data.name).first()
 
-def get_star_by_id(db: Session, star_id: int):
+def get_star_by_id(db: Session, star_id: int) -> Star | None:
     return db.query(Star).filter_by(id=star_id).first()
 
-def get_all_stars(db: Session):
+def get_all_stars(db: Session) -> list[Star]:
     return db.query(Star).all()
 
-def get_or_create_stars(db: Session, movie_data: MovieCreateSchema):
+def get_or_create_stars(db: Session, movie_data: MovieCreateSchema) -> list[Star | Type[Star]]:
     stars = []
 
     for star_name in movie_data.stars:
@@ -146,7 +143,7 @@ def get_or_create_stars(db: Session, movie_data: MovieCreateSchema):
 
     return stars
 
-def get_or_create_directors(db: Session, movie_data: MovieCreateSchema):
+def get_or_create_directors(db: Session, movie_data: MovieCreateSchema) -> list[Director | Type[Director]]:
     directors = []
 
     for director_name in movie_data.directors:
@@ -159,17 +156,17 @@ def get_or_create_directors(db: Session, movie_data: MovieCreateSchema):
 
     return directors
 
-def get_user_by_id(db: Session, user_id: int):
+def get_user_by_id(db: Session, user_id: int) -> User | None:
     return db.query(User).filter_by(id=user_id).first()
 
-def get_liked_movie(db: Session, movie: Movie, user: User):
+def get_liked_movie(db: Session, movie: Movie, user: User) -> MovieLike | None:
     return (
         db.query(MovieLike).filter_by(
             movie_id=movie.id, user_id=user.id
         ).first()
     )
 
-def get_favourite_movie(db: Session, movie: Movie, user: User):
+def get_favourite_movie(db: Session, movie: Movie, user: User) -> FavoriteMovie | None:
     return (
         db.query(FavoriteMovie).filter_by(
             movie_id=movie.id, user_id=user.id

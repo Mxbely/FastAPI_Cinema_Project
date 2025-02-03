@@ -74,7 +74,7 @@ class MovieBaseSchema(BaseModel):
 
     @field_validator("year")
     @classmethod
-    def validate_year(cls, value):
+    def validate_year(cls, value: int) -> int:
         first_movie_year = 1888
         current_year = datetime.now().year
         if value < first_movie_year or value > current_year:
