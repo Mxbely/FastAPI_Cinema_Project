@@ -16,6 +16,7 @@ from schemas import PaymentHistoryResponse
 from schemas.accounts import MessageResponseSchema
 from security.http import get_token
 from security.interfaces import JWTAuthManagerInterface
+from services import create_checkout_session
 from utils import retrieve_user_from_token
 
 router = APIRouter()
@@ -23,7 +24,6 @@ router = APIRouter()
 
 @router.get("/", response_model=Page[PaymentHistoryResponse])
 def read_payments(
-    request: Request,
     user_id: Optional[int] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
@@ -47,13 +47,6 @@ def read_payments(
         query = query.filter(Payment.created_at <= end_date)
     if payment_status:
         query = query.filter_by(status=payment_status)
-
-    payments = query.all()
-
-    if not payments:
-        return MessageResponseSchema(
-            message="No payments found."
-        )
 
     return paginate(query)
 
@@ -86,31 +79,24 @@ def payment_success(
             message=f"Payment with session_id {session_id} was successful."
         )
 
-    session = None
-
     try:
         session = stripe.checkout.Session.retrieve(session_id)
-    except stripe.error.StripeError as e:
-        handle_stripe_error(e)
-
-    if session.payment_status == "paid":
-        update_payment_status(
-            payment,
-            PaymentStatusEnum.SUCCESSFUL,
-            db
-        )
+        if not session or session.payment_status != "paid":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Payment was not successful."
+            )
+        update_payment_status(payment, PaymentStatusEnum.SUCCESSFUL, db)
 
         order = db.query(Order).filter_by(id=payment.order_id).first()
-        order.status = OrderStatusEnum.PAID
-        db.commit()
-        return MessageResponseSchema(
-            message=f"Payment with session_id {session_id} was successful."
-        )
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Payment was not successful."
-        )
+
+        if order:
+            order.status = OrderStatusEnum.PAID
+            db.commit()
+        return MessageResponseSchema(message=f"Payment {session_id} was successful.")
+    except stripe.StripeError as e:
+        handle_stripe_error(e)
+        return MessageResponseSchema(message=f"Payment {session_id} failed.")
 
 
 @router.get("/cancel")
@@ -154,14 +140,15 @@ def payment_cancel(
             )
 
         stripe.checkout.Session.expire(session_id)
-    except stripe.error.StripeError as e:
+    except stripe.StripeError as e:
         handle_stripe_error(e)
 
     update_payment_status(payment, PaymentStatusEnum.CANCELLED, db)
 
     order = db.query(Order).filter_by(id=payment.order_id).first()
-    order.status = OrderStatusEnum.CANCELED
-    db.commit()
+    if order:
+        order.status = OrderStatusEnum.CANCELED
+        db.commit()
 
     return MessageResponseSchema(
         message=f"Payment with session_id {session_id} was cancelled."
@@ -205,7 +192,7 @@ def payment_refund(
         )
 
         stripe.Refund.create(
-            payment_intent=session.payment_intent
+            payment_intent=str(session.payment_intent)
         )
 
         order.status = OrderStatusEnum.CANCELED
@@ -215,5 +202,8 @@ def payment_refund(
         return MessageResponseSchema(
             message=f"Order with id {order_id} was refunded successfully."
         )
-    except stripe.error.StripeError as e:
+    except stripe.StripeError as e:
         handle_stripe_error(e)
+        return MessageResponseSchema(
+            message=f"An error occurred while refunding order with id {order_id}."
+        )
