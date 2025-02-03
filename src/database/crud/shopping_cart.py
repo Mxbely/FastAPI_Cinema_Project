@@ -128,7 +128,7 @@ def process_order_payment_and_clear_cart(
 
 
 def is_movie_in_any_cart(db: Session, movie_id: int) -> bool:
-    return db.query(CartItem).filter(CartItem.movie_id == movie_id).count() > 0
+    return bool(db.query(CartItem).filter(CartItem.movie_id == movie_id).count())
 
 
 def delete_movie(db: Session, movie: Movie) -> None:
@@ -136,7 +136,7 @@ def delete_movie(db: Session, movie: Movie) -> None:
     db.commit()
 
 
-def get_purchased_movies_from_db(user: User, db: Session) -> list[Type[Movie]]:
+def get_purchased_movies_from_db(user: User, db: Session) -> list[Movie]:
     return (
         db.query(Movie)
         .join(CartItem)
@@ -148,7 +148,7 @@ def get_purchased_movies_from_db(user: User, db: Session) -> list[Type[Movie]]:
     )
 
 
-def get_cart_items_details(cart):
+def get_cart_items_details(cart) -> List[CartItemDetail]:
     return [
         CartItemDetail(
             movie_id=item.movie.id,

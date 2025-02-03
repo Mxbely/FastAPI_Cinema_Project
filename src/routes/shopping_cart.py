@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -48,10 +50,10 @@ router = APIRouter()
 
 @router.get("/", response_model=CartResponse)
 def get_cart(
-        db: Session = Depends(get_postgresql_db),
-        token: str = Depends(get_token),
-        jwt_manager=Depends(get_jwt_auth_manager)
-):
+        db: Annotated[Session, Depends(get_postgresql_db)],
+        token: Annotated[str, Depends(get_token)],
+        jwt_manager: Annotated[object, Depends(get_jwt_auth_manager)]
+) -> CartResponse:
     try:
         payload = jwt_manager.decode_access_token(token)
         user_id = payload.get("user_id")
