@@ -13,6 +13,7 @@ from database import (
     User,
     UserGroupEnum,
 )
+from database.crud.accounts import get_user_by_id
 from database.crud.shopping_cart import (
     add_cart_item,
     create_cart,
@@ -22,6 +23,10 @@ from database.crud.shopping_cart import (
     get_movie_by_id,
     get_purchased_movies_from_db,
     get_user_cart,
+    delete_cart_item_by_cart,
+    create_order,
+    process_order_payment_and_clear_cart,
+    is_movie_in_any_cart,
 )
 from database.session_postgresql import get_postgresql_db
 from schemas.accounts import MessageResponseSchema
@@ -123,7 +128,7 @@ def remove_from_cart(
             detail=str(e)
         )
 
-    user = db.query(User).filter(User.id == user_id).first()
+    user = get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -157,7 +162,7 @@ def clear_cart(
             detail=str(e)
         )
 
-    user = db.query(User).filter(User.id == user_id).first()
+    user = get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -168,8 +173,7 @@ def clear_cart(
     if not cart or not cart.items:
         raise HTTPException(status_code=404, detail="Cart is already empty")
 
-    db.query(CartItem).filter(CartItem.cart_id == cart.id).delete()
-    db.commit()
+    delete_cart_item_by_cart(db, cart.id)
 
     return CartItemResponse(message="Cart cleared successfully")
 
@@ -189,7 +193,7 @@ def checkout(
             detail=str(e)
         )
 
-    user = db.query(User).filter(User.id == user_id).first()
+    user = get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -210,45 +214,9 @@ def checkout(
         user_id=user.id,
         total_amount=sum(item.movie.price for item in cart.items)
     )
-    db.add(order)
-    db.commit()
-    db.refresh(order)
+    create_order(db, order)
 
-    order_items = []
-    for item in cart.items:
-        order_item = OrderItem(
-            order_id=order.id,
-            movie_id=item.movie.id,
-            price_at_order=item.movie.price
-        )
-        db.add(order_item)
-        order_items.append(order_item)
-
-    db.commit()
-
-    payment = Payment(
-        user_id=user.id,
-        order_id=order.id,
-        status=PaymentStatusEnum.PENDING,
-        amount=order.total_amount,
-        external_payment_id=None
-    )
-    db.add(payment)
-    db.commit()
-    db.refresh(payment)
-
-    for order_item in order_items:
-        payment_item = PaymentItem(
-            payment_id=payment.id,
-            order_item_id=order_item.id,
-            price_at_payment=order_item.price_at_order
-        )
-        db.add(payment_item)
-
-    db.commit()
-
-    db.query(CartItem).filter(CartItem.cart_id == cart.id).delete()
-    db.commit()
+    process_order_payment_and_clear_cart(db, user, order, cart)
 
     return MessageResponseSchema(message="Payment successful")
 
@@ -268,7 +236,7 @@ def get_purchased_movies(
             detail=str(e)
         )
 
-    user = db.query(User).filter(User.id == user_id).first()
+    user = get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -301,7 +269,7 @@ def get_user_cart_admin(
             detail=str(e)
         )
 
-    user = db.query(User).filter(User.id == user_id).first()
+    user = get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -338,19 +306,15 @@ def delete_movie(
             detail=str(e)
         )
 
-    movie = db.query(Movie).filter(Movie.id == movie_id).first()
+    movie = get_movie_by_id(db, movie_id)
     if not movie:
         raise HTTPException(status_code=404, detail="Movie not found")
 
-    cart_items = (
-        db.query(CartItem).filter(CartItem.movie_id == movie.id).count()
-    )
-    if cart_items > 0:
+    if is_movie_in_any_cart(db, movie_id):
         raise HTTPException(
             status_code=400,
             detail="Movie cannot be deleted because it exists in user carts"
         )
 
-    db.delete(movie)
-    db.commit()
+    delete_movie(db, movie)
     return MessageResponseSchema(message="Movie deleted successfully")

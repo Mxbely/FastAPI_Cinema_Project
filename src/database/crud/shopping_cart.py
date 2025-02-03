@@ -1,9 +1,19 @@
-from typing import Type
+from typing import Type, List
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from database import Cart, CartItem, Movie, Order, User
+from database import (
+    Cart,
+    CartItem,
+    Movie,
+    Order,
+    User,
+    OrderItem,
+    Payment,
+    PaymentItem,
+    PaymentStatusEnum
+)
 from schemas.shopping_cart import CartItemDetail
 
 
@@ -43,6 +53,77 @@ def add_cart_item(cart: Cart, movie: Movie, db: Session) -> CartItem:
 
 def delete_cart_item(cart_item: CartItem, db: Session) -> None:
     db.delete(cart_item)
+    db.commit()
+
+
+def delete_cart_item_by_cart(db: Session, cart_id: int) -> None:
+    db.query(CartItem).filter(CartItem.cart_id == cart_id).delete()
+    db.commit()
+
+
+def create_order(db: Session, order: Order) -> None:
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+
+
+def create_order_items(db: Session, order: Order, cart: Cart) -> List[OrderItem]:
+    order_items: List[OrderItem] = []
+    for item in cart.items:
+        order_item = OrderItem(
+            order_id=order.id,
+            movie_id=item.movie.id,
+            price_at_order=item.movie.price
+        )
+        db.add(order_item)
+        order_items.append(order_item)
+
+    db.commit()
+    return order_items
+
+
+def create_payment(db: Session, user: User, order: Order) -> Payment:
+    payment = Payment(
+        user_id=user.id,
+        order_id=order.id,
+        status=PaymentStatusEnum.PENDING,
+        amount=order.total_amount,
+        external_payment_id=None
+    )
+    db.add(payment)
+    db.commit()
+    db.refresh(payment)
+    return payment
+
+
+def create_payment_items(db: Session, payment: Payment, order_items: List[OrderItem]) -> None:
+    for order_item in order_items:
+        payment_item = PaymentItem(
+            payment_id=payment.id,
+            order_item_id=order_item.id,
+            price_at_payment=order_item.price_at_order
+        )
+        db.add(payment_item)
+
+    db.commit()
+
+
+def process_order_payment_and_clear_cart(db: Session, user: User, order: Order, cart: Cart) -> Payment:
+    order_items = create_order_items(db, order, cart)
+    payment = create_payment(db, user, order)
+    create_payment_items(db, payment, order_items)
+
+    delete_cart_item_by_cart(db, cart.id)
+
+    return payment
+
+
+def is_movie_in_any_cart(db: Session, movie_id: int) -> bool:
+    return db.query(CartItem).filter(CartItem.movie_id == movie_id).count() > 0
+
+
+def delete_movie(db: Session, movie: Movie) -> None:
+    db.delete(movie)
     db.commit()
 
 
