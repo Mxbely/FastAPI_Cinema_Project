@@ -82,14 +82,17 @@ def get_user_orders(
                 detail="You don't have permission.",
             )
         orders_query = db.query(Order).filter(Order.user_id == current_user.id)
+
     orders = orders_query.options(
         joinedload(Order.order_items).joinedload(OrderItem.movie)
     )
     orders = orders.order_by(Order.created_at.desc()).all()
+
     if not orders:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No orders found."
         )
+
     order_list = [
         OrderItemResponseSchema(
             created_at=order.created_at,

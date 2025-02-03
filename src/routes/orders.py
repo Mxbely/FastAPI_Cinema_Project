@@ -25,8 +25,6 @@ router = APIRouter()
 Endpoint: POST /orders/
 Description: Allows users to place an order for movies in their cart.
 """
-
-
 @router.post("/orders/")
 def place_order(
     request: Request,
@@ -50,8 +48,6 @@ def place_order(
 Endpoint: GET /orders/
 Description: Retrieves a list of all orders placed by a specific user.
 """
-
-
 @router.get(
     "/orders/",
     response_model=list[OrderItemResponseSchema],
