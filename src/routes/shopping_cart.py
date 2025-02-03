@@ -15,7 +15,8 @@ from database import (
     OrderItem,
     Payment,
     PaymentStatusEnum,
-    UserGroupEnum
+    UserGroupEnum,
+    Movie
 )
 from database.session_postgresql import get_postgresql_db
 from schemas.accounts import MessageResponseSchema
@@ -178,7 +179,7 @@ def clear_cart(
     return CartItemResponse(message="Cart cleared successfully")
 
 
-@router.post("/checkout")
+@router.post("/checkout", response_model=MessageResponseSchema)
 def checkout(
         db: Session = Depends(get_postgresql_db),
         token: str = Depends(get_token),
@@ -257,7 +258,7 @@ def checkout(
     return MessageResponseSchema(message="Payment successful")
 
 
-@router.get("/purchased")
+@router.get("/purchased", response_model=PurchasedMoviesResponse)
 def get_purchased_movies(
         db: Session = Depends(get_postgresql_db),
         token: str = Depends(get_token),
@@ -314,3 +315,47 @@ def get_user_cart_admin(
         return CartResponse(user_id=user.id, movies=[])
 
     return CartResponse(user_id=user.id, movies=get_cart_items_details(cart))
+
+
+@router.delete(
+    "/admin/movies/{movie_id}",
+    response_model=MessageResponseSchema
+)
+def delete_movie(
+        movie_id: int,
+        db: Session = Depends(get_postgresql_db),
+        token: str = Depends(get_token),
+        jwt_manager=Depends(get_jwt_auth_manager)
+):
+    try:
+        payload = jwt_manager.decode_access_token(token)
+        user_id = payload.get("user_id")
+        user = db.query(User).filter(User.id == user_id).first()
+
+        if not user or not (
+                user.has_group(UserGroupEnum.ADMIN)
+                or user.has_group(UserGroupEnum.MODERATOR)
+        ):
+            raise HTTPException(status_code=403, detail="Access denied")
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e)
+        )
+
+    movie = db.query(Movie).filter(Movie.id == movie_id).first()
+    if not movie:
+        raise HTTPException(status_code=404, detail="Movie not found")
+
+    cart_items = (
+        db.query(CartItem).filter(CartItem.movie_id == movie.id).count()
+    )
+    if cart_items > 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Movie cannot be deleted because it exists in user carts"
+        )
+
+    db.delete(movie)
+    db.commit()
+    return MessageResponseSchema(message="Movie deleted successfully")
