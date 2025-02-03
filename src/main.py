@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi_pagination import add_pagination
 
 from routes import accounts_router, profiles_router, orders_router, payments_router
 
@@ -20,3 +21,5 @@ app.include_router(
 app.include_router(
     payments_router, prefix=f"{api_version_prefix}/payments", tags=["payments"]
 )
+
+add_pagination(app)
