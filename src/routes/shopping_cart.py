@@ -5,13 +5,7 @@ from sqlalchemy.orm import Session
 
 from config import get_jwt_auth_manager
 from database import (
-    CartItem,
-    Movie,
     Order,
-    OrderItem,
-    Payment,
-    PaymentItem,
-    PaymentStatusEnum,
     User,
     UserGroupEnum,
 )
@@ -22,13 +16,14 @@ from database.crud.shopping_cart import (
     create_order,
     delete_cart_item,
     delete_cart_item_by_cart,
+    delete_movie,
     get_cart_item,
     get_cart_items_details,
     get_movie_by_id,
     get_purchased_movies_from_db,
     get_user_cart,
     is_movie_in_any_cart,
-    process_order_payment_and_clear_cart, delete_movie,
+    process_order_payment_and_clear_cart,
 )
 from database.session_postgresql import get_postgresql_db
 from schemas.accounts import MessageResponseSchema
