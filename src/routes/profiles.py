@@ -13,13 +13,35 @@ from database.models.accounts import (
     UserGroupEnum,
     UserProfile,
 )
-from exceptions import BaseSecurityError, S3FileUploadError
+from exceptions import BaseSecurityError, S3FileUploadError, TokenExpiredError
 from schemas.profiles import ProfileCreateSchema, ProfileResponseSchema
 from security.http import get_token
 from security.interfaces import JWTAuthManagerInterface
+from security.token_manager import JWTAuthManager
 from storages import S3StorageInterface
 
 router = APIRouter()
+
+
+def get_current_user(
+    token: str = Depends(get_token),
+    db: Session = Depends(get_db),
+    jwt_manager: JWTAuthManager = Depends(get_jwt_auth_manager)
+) -> User:
+    try:
+        token_data = jwt_manager.decode_access_token(token)
+        user = db.query(User).filter_by(id=token_data.get("user_id")).first()
+        if not user or not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found or not active."
+            )
+        return user
+    except TokenExpiredError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired."
+        )
 
 
 @router.post(
