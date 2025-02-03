@@ -4,6 +4,8 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import List, Optional
 
+from schemas.accounts import UserRegistrationResponseSchema
+
 
 class CertificationSchema(BaseModel):
     name: str
@@ -115,14 +117,24 @@ class MovieUpdateSchema(MovieBaseSchema):
 
 
 class MovieLikeResponseSchema(BaseModel):
-    user_id: int = Field(None, ge=0)
-    movie_id: int = Field(None, ge=0)
+    # user_id: int = Field(None, ge=0)
+    # movie_id: int = Field(None, ge=0)
     is_liked: bool
     created_at: datetime
+    user: UserRegistrationResponseSchema
+    movie: MovieListItemSchema
+
+    class Config:
+        from_attributes = True
 
 
 class MovieFavoriteResponseSchema(BaseModel):
-    user_id: int = Field(None, ge=0)
-    movie_id: int = Field(None, ge=0)
+    # user_id: int = Field(None, ge=0)
+    # movie_id: int = Field(None, ge=0)
     is_favorited: bool
     created_at: datetime
+    user: UserRegistrationResponseSchema
+    movie: MovieListItemSchema
+
+    class Config:
+        from_attributes = True
