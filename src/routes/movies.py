@@ -1,17 +1,16 @@
-from typing import List
-from urllib.request import Request
+from typing import List, Optional
 
 from fastapi import APIRouter, Query, Depends, HTTPException, requests
 from sqlalchemy.orm import Session, joinedload
 
 from config import get_jwt_auth_manager
 from database import get_db, Movie, Certification, Genre, Star, Director
-from database.crud.movies import get_movies_paginated
+from database.crud.movies import get_movies_paginated, filter_movies
 from database.models.accounts import TokenBase, User
 from database.models.movies import MovieLike, FavoriteMovie
 from schemas.movies import MovieListResponseSchema, MovieListItemSchema, MovieDetailSchema, MovieCreateSchema, \
     MovieUpdateSchema, StarsSchema, StarsResponseSchema, \
-    GenresSchema, GenreResponseSchema, MovieLikeResponseSchema, MovieFavoriteResponseSchema
+    GenresSchema, GenreResponseSchema, MovieLikeResponseSchema, MovieFavoriteResponseSchema, MovieSortEnum
 from security.http import get_token
 from security.interfaces import JWTAuthManagerInterface
 
@@ -39,46 +38,105 @@ router = APIRouter()
         }
     }
 )
-def movie_list(
+# def movie_list(
+#         page: int = Query(1, ge=1, description="Page number (1-based index)"),
+#         per_page: int = Query(10, ge=1, le=20, description="Number of items per page"),
+#         db: Session = Depends(get_db),
+# ) -> MovieListResponseSchema:
+#     """
+#     Fetch a paginated list of movies from the database.
+#
+#     This function retrieves a paginated list of movies, allowing the client to specify
+#     the page number and the number of items per page. It calculates the total pages
+#     and provides links to the previous and next pages when applicable.
+#
+#     :param page: The page number to retrieve (1-based index, must be >= 1).
+#     :type page: int
+#     :param per_page: The number of items to display per page (must be between 1 and 20).
+#     :type per_page: int
+#     :param db: The SQLAlchemy database session (provided via dependency injection).
+#     :type db: Session
+#
+#     :return: A response containing the paginated list of movies and metadata.
+#     :rtype: MovieListResponseSchema
+#
+#     :raises HTTPException: Raises a 404 error if no movies are found for the requested page.
+#     """
+#     total_items, movies = get_movies_paginated(page, per_page, db)
+#
+#     if not movies:
+#         raise HTTPException(status_code=404, detail="No movies found.")
+#
+#     movie_list = [
+#         MovieListItemSchema.model_validate(movie)
+#         for movie in movies
+#     ]
+#
+#     total_pages = (total_items + per_page - 1) // per_page
+#
+#     return MovieListResponseSchema(
+#         movies=movie_list,
+#         prev_page=f"/cinema/movies/?page={page - 1}&per_page={per_page}" if page > 1 else None,
+#         next_page=f"/cinema/movies/?page={page + 1}&per_page={per_page}" if page < total_pages else None,
+#         total_pages=total_pages,
+#         total_items=total_items,
+#     )
+def get_movie_list(
         page: int = Query(1, ge=1, description="Page number (1-based index)"),
         per_page: int = Query(10, ge=1, le=20, description="Number of items per page"),
+        name: Optional[str] = Query(None),
+        year: Optional[int] = Query(None),
+        min_imdb: Optional[float] = Query(None),
+        max_imdb: Optional[float] = Query(None),
+        min_votes: Optional[int] = Query(None),
+        max_votes: Optional[int] = Query(None),
+        min_price: Optional[float] = Query(None),
+        max_price: Optional[float] = Query(None),
+        sort_by: Optional[MovieSortEnum] = Query(None),
         db: Session = Depends(get_db),
 ) -> MovieListResponseSchema:
     """
-    Fetch a paginated list of movies from the database.
+       Fetch a paginated list of movies from the database.
 
-    This function retrieves a paginated list of movies, allowing the client to specify
-    the page number and the number of items per page. It calculates the total pages
-    and provides links to the previous and next pages when applicable.
+       This function retrieves a paginated list of movies, allowing the client to specify
+       the page number and the number of items per page. It calculates the total pages
+       and provides links to the previous and next pages when applicable.
 
-    :param page: The page number to retrieve (1-based index, must be >= 1).
-    :type page: int
-    :param per_page: The number of items to display per page (must be between 1 and 20).
-    :type per_page: int
-    :param db: The SQLAlchemy database session (provided via dependency injection).
-    :type db: Session
+       :param page: The page number to retrieve (1-based index, must be >= 1).
+       :type page: int
+       :param per_page: The number of items to display per page (must be between 1 and 20).
+       :type per_page: int
+       :param db: The SQLAlchemy database session (provided via dependency injection).
+       :type db: Session
 
-    :return: A response containing the paginated list of movies and metadata.
-    :rtype: MovieListResponseSchema
+       :return: A response containing the paginated list of movies and metadata.
+       :rtype: MovieListResponseSchema
 
-    :raises HTTPException: Raises a 404 error if no movies are found for the requested page.
+       :raises HTTPException: Raises a 404 error if no movies are found for the requested page.
     """
-    total_items, movies = get_movies_paginated(page, per_page, db)
 
-    if not movies:
-        raise HTTPException(status_code=404, detail="No movies found.")
+    movies_filter = {
+        "name": name, "year": year, "min_imdb": min_imdb, "max_imdb": max_imdb,
+        "min_votes": min_votes, "max_votes": max_votes,
+        "min_price": min_price, "max_price": max_price
+    }
 
-    movie_list = [
-        MovieListItemSchema.model_validate(movie)
-        for movie in movies
-    ]
+    filtered_movies = filter_movies(db, movies_filter, sort_by)
 
+    total_items = len(filtered_movies)
     total_pages = (total_items + per_page - 1) // per_page
 
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_movies = filtered_movies[start:end]
+
+    if not paginated_movies:
+        raise HTTPException(status_code=404, detail="No movies found.")
+
     return MovieListResponseSchema(
-        movies=movie_list,
-        prev_page=f"/cinema/movies/?page={page - 1}&per_page={per_page}" if page > 1 else None,
-        next_page=f"/cinema/movies/?page={page + 1}&per_page={per_page}" if page < total_pages else None,
+        movies=[MovieListItemSchema.model_validate(movie) for movie in paginated_movies],
+        prev_page=f"/movies/?page={page - 1}&per_page={per_page}" if page > 1 else None,
+        next_page=f"/movies/?page={page + 1}&per_page={per_page}" if page < total_pages else None,
         total_pages=total_pages,
         total_items=total_items,
     )
