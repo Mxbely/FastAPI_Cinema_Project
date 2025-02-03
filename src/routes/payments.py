@@ -2,7 +2,15 @@ from datetime import datetime
 from typing import Annotated, Optional
 
 import stripe
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status, BackgroundTasks
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+    status,
+    BackgroundTasks
+)
 from fastapi_pagination.ext.sqlalchemy import paginate
 from fastapi_pagination.links import Page
 from sqlalchemy.orm import Session
@@ -24,13 +32,13 @@ router = APIRouter()
 
 @router.get("/", response_model=Page[PaymentHistoryResponse])
 def read_payments(
-    user_id: Optional[int] = None,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
-    payment_status: Optional[PaymentStatusEnum] = None,
-    db: Session = Depends(get_db),
-    token: str = Depends(get_token),
-    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
+        user_id: Optional[int] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        payment_status: Optional[PaymentStatusEnum] = None,
+        db: Session = Depends(get_db),
+        token: str = Depends(get_token),
+        jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
 ) -> Page[PaymentHistoryResponse] | MessageResponseSchema:
     user = retrieve_user_from_token(db, token, jwt_manager)
 
@@ -53,10 +61,10 @@ def read_payments(
 
 @router.get("/success")
 def payment_success(
-    session_id: Annotated[str, Query(max_length=500)],
-    db: Session = Depends(get_db),
-    token: str = Depends(get_token),
-    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
+        session_id: Annotated[str, Query(max_length=500)],
+        db: Session = Depends(get_db),
+        token: str = Depends(get_token),
+        jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
 ) -> MessageResponseSchema:
     retrieve_user_from_token(db, token, jwt_manager)
 
@@ -100,10 +108,10 @@ def payment_success(
 
 @router.get("/cancel")
 def payment_cancel(
-    session_id: Annotated[str, Query(max_length=500)],
-    db: Session = Depends(get_db),
-    token: str = Depends(get_token),
-    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
+        session_id: Annotated[str, Query(max_length=500)],
+        db: Session = Depends(get_db),
+        token: str = Depends(get_token),
+        jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
 ) -> MessageResponseSchema:
     retrieve_user_from_token(db, token, jwt_manager)
 
@@ -122,8 +130,8 @@ def payment_cancel(
         )
 
     if (
-        payment.status == PaymentStatusEnum.CANCELLED or
-        payment.status == PaymentStatusEnum.SUCCESSFUL
+            payment.status == PaymentStatusEnum.CANCELLED or
+            payment.status == PaymentStatusEnum.SUCCESSFUL
     ):
         return MessageResponseSchema(
             message=f"Payment with session_id {session_id} "
@@ -156,10 +164,10 @@ def payment_cancel(
 
 @router.post("/refund")
 def payment_refund(
-    order_id: int,
-    db: Session = Depends(get_db),
-    token: str = Depends(get_token),
-    jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
+        order_id: int,
+        db: Session = Depends(get_db),
+        token: str = Depends(get_token),
+        jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
 ) -> MessageResponseSchema:
     user = retrieve_user_from_token(db, token, jwt_manager)
 
@@ -207,11 +215,11 @@ def payment_refund(
 
 @router.post("/stripe-webhook")
 async def stripe_webhook(
-    request: Request,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
-    email_sender: EmailSenderInterface = Depends(get_accounts_email_notificator)
-):
+        request: Request,
+        background_tasks: BackgroundTasks,
+        db: Session = Depends(get_db),
+        email_sender: EmailSenderInterface = Depends(get_accounts_email_notificator)
+) -> MessageResponseSchema:
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
 
@@ -219,7 +227,7 @@ async def stripe_webhook(
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header, get_settings().STRIPE_WEBHOOK_SECRET
-        )
+        )  # type: ignore
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -245,7 +253,7 @@ async def stripe_webhook(
             )
 
         # Generating order link and retrieving user's email
-        order_link = request.url_for("read_order", order_id=payment.order_id)
+        order_link = request.url_for("get_order_detail", order_id=payment.order_id)
         user = db.query(User).filter_by(id=payment.user_id).first()
         if not user:
             raise HTTPException(
