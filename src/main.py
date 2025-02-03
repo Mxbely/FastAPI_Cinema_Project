@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi_pagination import add_pagination
 
-from routes import accounts_router, profiles_router, movies_router, payments_router
+from routes import accounts_router, movies_router, payments_router, profiles_router
 
 app = FastAPI(
     title="Movies Cinema",
