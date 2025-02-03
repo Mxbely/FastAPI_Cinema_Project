@@ -143,23 +143,6 @@ def movie_detail(
             detail="Movie with the given ID was not found."
         )
 
-    # return MovieDetailSchema(
-    #     id=movie.id,
-    #     uuid=movie.uuid,
-    #     name=movie.name,
-    #     year=movie.year,
-    #     time=movie.time,
-    #     imdb=movie.imdb,
-    #     votes=movie.votes,
-    #     meta_score=movie.meta_score,
-    #     gross=movie.gross,
-    #     description=movie.description,
-    #     price=movie.price,
-    #     certification=movie.certification,
-    #     genres=movie.genres,
-    #     stars=movie.stars,
-    #     directors=movie.directors,
-    # )
     return MovieDetailSchema.model_validate(movie)
 
 
@@ -220,10 +203,9 @@ def create_movie(
         )
 
     try:
-        certification = db.query(Certification).filter(Certification.id == movie_data.certification_id).first()
+        certification = db.query(Certification).filter_by(name=movie_data.certification).first()
         if not certification:
-            # raise HTTPException(status_code=404, detail="Certification not found")
-            certification = Certification(name="Certificat-01")
+            certification = Certification(name=movie_data.certification)
             db.add(certification)
             db.commit()
             db.refresh(certification)
