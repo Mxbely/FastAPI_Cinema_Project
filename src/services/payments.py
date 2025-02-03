@@ -1,9 +1,9 @@
 import stripe
 from fastapi import Request
-from sqlalchemy.orm import Session
+from stripe.checkout import Session
 
 from config import get_settings
-from database import Order
+from database import Order, Payment, PaymentStatusEnum
 from database.crud import create_payment, create_payment_items
 from exceptions import handle_stripe_error
 from schemas.payments import PaymentCreateSchema
@@ -17,6 +17,24 @@ def create_checkout_session(
     user_id: int,
     db: Session
 ):
+    payment = db.query(Payment).filter_by(
+        order_id=order.id, status=PaymentStatusEnum.PENDING.value
+    ).first()
+
+    session = None
+    if payment:
+        try:
+            if hasattr(payment, "external_payment_id"):
+                stripe_external_id = payment.external_payment_id
+                session = stripe.checkout.Session.retrieve(
+                    stripe_external_id
+                )
+        except stripe.error.StripeError as e:
+            handle_stripe_error(e)
+
+    if session:
+        return session.url
+
     total_amount = order.total_amount
 
     product_data = " ".join(
