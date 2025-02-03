@@ -1,7 +1,9 @@
-from decimal import Decimal
+from datetime import datetime
 from typing import Optional
+from decimal import Decimal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+from database import PaymentStatusEnum
 
 
 class PaymentSchema(BaseModel):
@@ -18,3 +20,12 @@ class PaymentItemCreateSchema(BaseModel):
     payment_id: int
     order_item_id: int
     price_at_payment: Decimal
+
+
+class PaymentHistoryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    amount: Decimal
+    status: PaymentStatusEnum
+    created_at: datetime
