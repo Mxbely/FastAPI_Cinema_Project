@@ -14,7 +14,8 @@ from database import (
     PaymentItem,
     OrderItem,
     Payment,
-    PaymentStatusEnum
+    PaymentStatusEnum,
+    UserGroupEnum
 )
 from database.session_postgresql import get_postgresql_db
 from schemas.accounts import MessageResponseSchema
@@ -282,3 +283,34 @@ def get_purchased_movies(
     return PurchasedMoviesResponse(
         purchased_movies=[movie.name for movie in purchased_movies]
     )
+
+
+@router.get("/admin/{user_id}", response_model=CartResponse)
+def get_user_cart_admin(
+        user_id: int,
+        db: Session = Depends(get_postgresql_db),
+        token: str = Depends(get_token),
+        jwt_manager=Depends(get_jwt_auth_manager)
+):
+    try:
+        payload = jwt_manager.decode_access_token(token)
+        admin_id = payload.get("user_id")
+        admin = db.query(User).filter(User.id == admin_id).first()
+
+        if not admin or not admin.has_group(UserGroupEnum.ADMIN):
+            raise HTTPException(status_code=403, detail="Access denied")
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e)
+        )
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    cart = get_user_cart(user, db)
+    if not cart:
+        return CartResponse(user_id=user.id, movies=[])
+
+    return CartResponse(user_id=user.id, movies=get_cart_items_details(cart))
