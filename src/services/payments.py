@@ -17,6 +17,19 @@ def create_checkout_session(
     user_id: int,
     db: Session
 ) -> str | None:
+    """
+    Creates a Stripe checkout session for a given order.
+
+    Args:
+        request (Request): The FastAPI request object.
+        order (Order): The order object containing order details.
+        user_id (int): The ID of the user making the payment.
+        db (Session): The SQLAlchemy database session.
+
+    Returns:
+        str | None: The URL of the created Stripe checkout
+        session, or None if the session couldn't be created.
+    """
     existing_payment = db.query(Payment).filter_by(
         order_id=order.id, status=PaymentStatusEnum.PENDING.value
     ).first()
