@@ -85,7 +85,7 @@ class MovieBaseSchema(BaseModel):
 class MovieCreateSchema(MovieBaseSchema):
     meta_score: Optional[float] = Field(None, ge=0, le=100)
     gross: Optional[float] = Field(None, ge=0)
-    certification_id: int = Field(..., ge=0)
+    certification: str # name
     genres: list[str]
     stars: list[str]
     directors: list[str]
