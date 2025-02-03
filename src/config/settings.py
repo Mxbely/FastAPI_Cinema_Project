@@ -17,6 +17,7 @@ class BaseAppSettings(BaseSettings):
     ACTIVATION_COMPLETE_EMAIL_TEMPLATE_NAME: str = "activation_complete.html"
     PASSWORD_RESET_TEMPLATE_NAME: str = "password_reset_request.html"
     PASSWORD_RESET_COMPLETE_TEMPLATE_NAME: str = "password_reset_complete.html"
+    PAYMENT_SUCCESS_TEMPLATE_NAME: str = "payment_success.html"
 
     LOGIN_TIME_DAYS: int = 7
 
@@ -32,6 +33,10 @@ class BaseAppSettings(BaseSettings):
     S3_STORAGE_ACCESS_KEY: str = os.getenv("MINIO_ROOT_USER", "minioadmin")
     S3_STORAGE_SECRET_KEY: str = os.getenv("MINIO_ROOT_PASSWORD", "some_password")
     S3_BUCKET_NAME: str = os.getenv("MINIO_STORAGE", "theater-storage")
+
+    STRIPE_SECRET_KEY: str = os.environ["STRIPE_SECRET_KEY"]
+    STRIPE_PUBLIC_KEY: str = os.environ["STRIPE_PUBLIC_KEY"]
+    STRIPE_WEBHOOK_SECRET: str = os.environ["STRIPE_WEBHOOK_SECRET"]
 
     @property
     def S3_STORAGE_ENDPOINT(self) -> str:

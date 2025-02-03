@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, EmailStr, field_validator
 
 from database.validators import accounts as accounts_validators
@@ -11,12 +13,12 @@ class BaseEmailPasswordSchema(BaseModel):
 
     @field_validator("email")
     @classmethod
-    def validate_email(cls, value):
+    def validate_email(cls, value: str) -> str:
         return value.lower()
 
     @field_validator("password")
     @classmethod
-    def validate_password(cls, value):
+    def validate_password(cls, value: str) -> Any:
         return accounts_validators.validate_password_strength(value)
 
 
