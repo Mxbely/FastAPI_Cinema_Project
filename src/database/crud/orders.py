@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from fastapi import HTTPException, status
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, joinedload
 
 from database import Order, OrderItem, Cart, User
@@ -15,30 +16,43 @@ def create_order(user_id: int, db: Session) -> Order:
             status_code=status.HTTP_400_BAD_REQUEST, detail="Cart is empty."
         )
 
-    order = Order(
-        user_id=user_id, total_amount=sum(item.movie.price for item in cart.items)
-    )
-    db.add(order)
-    db.commit()
-    db.refresh(order)
-
-    for cart_item in cart.items:
-        order_item = OrderItem(
-            order_id=order.id,
-            movie_id=cart_item.movie_id,
-            price_at_order=cart_item.movie.price,
+    try:
+        order = Order(
+            user_id=user_id, total_amount=sum(item.movie.price for item in cart.items)
         )
-        db.add(order_item)
-        db.delete(cart_item)
+        db.add(order)
+        db.flush()
 
-    db.commit()
-    return order
+        for cart_item in cart.items:
+            order_item = OrderItem(
+                order_id=order.id,
+                movie_id=cart_item.movie_id,
+                price_at_order=cart_item.movie.price,
+            )
+            db.add(order_item)
+
+        db.commit()
+        db.refresh(order)
+        return order
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create order: {str(e)}"
+        )
 
 
 def update_order_with_stripe_url(order: Order, stripe_url: str, db: Session) -> None:
     """Updates the order with a Stripe URL."""
-    order.stripe_url = stripe_url
-    db.commit()
+    try:
+        order.stripe_url = stripe_url
+        db.commit()
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update order with Stripe URL: {str(e)}"
+        )
 
 
 def get_user_orders(
@@ -68,17 +82,14 @@ def get_user_orders(
                 detail="You don't have permission.",
             )
         orders_query = db.query(Order).filter(Order.user_id == current_user.id)
-
     orders = orders_query.options(
         joinedload(Order.order_items).joinedload(OrderItem.movie)
     )
     orders = orders.order_by(Order.created_at.desc()).all()
-
     if not orders:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No orders found."
         )
-
     order_list = [
         OrderItemResponseSchema(
             created_at=order.created_at,
