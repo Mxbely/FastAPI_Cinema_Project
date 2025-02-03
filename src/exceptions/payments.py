@@ -7,10 +7,10 @@ def handle_stripe_error(e: Exception):
     Handles Stripe API errors and returns appropriate HTTP responses.
     """
     errors = {
-        stripe.error.PermissionError: status.HTTP_403_FORBIDDEN,
-        stripe.error.APIConnectionError: status.HTTP_500_INTERNAL_SERVER_ERROR,
-        stripe.error.APIError: status.HTTP_500_INTERNAL_SERVER_ERROR,
-        stripe.error.CardError: status.HTTP_400_BAD_REQUEST,
+        stripe.PermissionError: status.HTTP_403_FORBIDDEN,
+        stripe.APIConnectionError: status.HTTP_500_INTERNAL_SERVER_ERROR,
+        stripe.APIError: status.HTTP_500_INTERNAL_SERVER_ERROR,
+        stripe.CardError: status.HTTP_400_BAD_REQUEST,
     }
 
     for error_type, status_code in errors.items():

@@ -1,6 +1,6 @@
 import stripe
 from fastapi import Request
-from stripe.checkout import Session
+from sqlalchemy.orm import Session
 
 from config import get_settings
 from database import Order, Payment, PaymentStatusEnum
@@ -16,26 +16,29 @@ def create_checkout_session(
     order: Order,
     user_id: int,
     db: Session
-) -> str:
-    payment = db.query(Payment).filter_by(
+) -> str | None:
+    existing_payment = db.query(Payment).filter_by(
         order_id=order.id, status=PaymentStatusEnum.PENDING.value
     ).first()
 
     session = None
-    if payment:
+    if existing_payment:
         try:
-            if hasattr(payment, "external_payment_id"):
-                stripe_external_id = payment.external_payment_id
+            if hasattr(existing_payment, "external_payment_id"):
+                stripe_external_id = existing_payment.external_payment_id
                 session = stripe.checkout.Session.retrieve(
-                    stripe_external_id
+                    str(stripe_external_id)
                 )
-        except stripe.error.StripeError as e:
+        except stripe.StripeError as e:
             handle_stripe_error(e)
 
     if session:
         return session.url
 
     total_amount = order.total_amount
+
+    if not total_amount:
+        return None
 
     product_data = " ".join(
         [
@@ -71,16 +74,20 @@ def create_checkout_session(
             cancel_url=cancel_url,
         )
 
-        payment = PaymentCreateSchema(
+        new_payment = PaymentCreateSchema(
             user_id=user_id,
             order_id=order.id,
             amount=total_amount,
             external_payment_id=session.id
         )
 
-        payment = create_payment(payment, db)
-        create_payment_items(payment, order, db)
+        created_payment = create_payment(new_payment, db)
 
-        return session.url
-    except stripe.error.StripeError as e:
+        if created_payment:
+            create_payment_items(created_payment, order, db)
+            return session.url
+
+        return None
+    except stripe.StripeError as e:
         handle_stripe_error(e)
+        return None
