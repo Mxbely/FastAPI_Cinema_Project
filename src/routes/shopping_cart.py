@@ -17,16 +17,16 @@ from database.crud.accounts import get_user_by_id
 from database.crud.shopping_cart import (
     add_cart_item,
     create_cart,
+    create_order,
     delete_cart_item,
+    delete_cart_item_by_cart,
     get_cart_item,
     get_cart_items_details,
     get_movie_by_id,
     get_purchased_movies_from_db,
     get_user_cart,
-    delete_cart_item_by_cart,
-    create_order,
-    process_order_payment_and_clear_cart,
     is_movie_in_any_cart,
+    process_order_payment_and_clear_cart,
 )
 from database.session_postgresql import get_postgresql_db
 from schemas.accounts import MessageResponseSchema

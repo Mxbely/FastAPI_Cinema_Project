@@ -1,4 +1,4 @@
-from typing import Type, List
+from typing import List, Type
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -8,11 +8,11 @@ from database import (
     CartItem,
     Movie,
     Order,
-    User,
     OrderItem,
     Payment,
     PaymentItem,
-    PaymentStatusEnum
+    PaymentStatusEnum,
+    User,
 )
 from schemas.shopping_cart import CartItemDetail
 
@@ -96,7 +96,11 @@ def create_payment(db: Session, user: User, order: Order) -> Payment:
     return payment
 
 
-def create_payment_items(db: Session, payment: Payment, order_items: List[OrderItem]) -> None:
+def create_payment_items(
+        db: Session,
+        payment: Payment,
+        order_items: List[OrderItem]
+) -> None:
     for order_item in order_items:
         payment_item = PaymentItem(
             payment_id=payment.id,
@@ -108,7 +112,12 @@ def create_payment_items(db: Session, payment: Payment, order_items: List[OrderI
     db.commit()
 
 
-def process_order_payment_and_clear_cart(db: Session, user: User, order: Order, cart: Cart) -> Payment:
+def process_order_payment_and_clear_cart(
+        db: Session,
+        user: User,
+        order: Order,
+        cart: Cart
+) -> Payment:
     order_items = create_order_items(db, order, cart)
     payment = create_payment(db, user, order)
     create_payment_items(db, payment, order_items)
