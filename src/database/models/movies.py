@@ -14,7 +14,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database import OrderItem, User
 from database.models.base import Base
 
 
