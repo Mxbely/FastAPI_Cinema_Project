@@ -80,10 +80,10 @@ def get_cart(
 @router.post("/add", response_model=CartResponse)
 def add_to_cart(
         cart_data: CartCreate,
-        db: Session = Depends(get_postgresql_db),
-        token: str = Depends(get_token),
-        jwt_manager=Depends(get_jwt_auth_manager)
-):
+        db: Annotated[Session, Depends(get_postgresql_db)],
+        token: Annotated[str, Depends(get_token)],
+        jwt_manager: Annotated[JWTAuthManager, Depends(get_jwt_auth_manager)]
+) -> CartResponse:
     try:
         payload = jwt_manager.decode_access_token(token)
         user_id = payload.get("user_id")
@@ -118,10 +118,10 @@ def add_to_cart(
 @router.delete("/remove/{movie_id}", response_model=CartItemResponse)
 def remove_from_cart(
         movie_id: int,
-        db: Session = Depends(get_postgresql_db),
-        token: str = Depends(get_token),
-        jwt_manager=Depends(get_jwt_auth_manager)
-):
+        db: Annotated[Session, Depends(get_postgresql_db)],
+        token: Annotated[str, Depends(get_token)],
+        jwt_manager: Annotated[JWTAuthManager, Depends(get_jwt_auth_manager)]
+) -> CartItemResponse:
     try:
         payload = jwt_manager.decode_access_token(token)
         user_id = payload.get("user_id")
@@ -152,10 +152,10 @@ def remove_from_cart(
 
 @router.delete("/clear", response_model=CartItemResponse)
 def clear_cart(
-        db: Session = Depends(get_postgresql_db),
-        token: str = Depends(get_token),
-        jwt_manager=Depends(get_jwt_auth_manager)
-):
+        db: Annotated[Session, Depends(get_postgresql_db)],
+        token: Annotated[str, Depends(get_token)],
+        jwt_manager: Annotated[JWTAuthManager, Depends(get_jwt_auth_manager)]
+) -> CartItemResponse:
     try:
         payload = jwt_manager.decode_access_token(token)
         user_id = payload.get("user_id")
@@ -183,10 +183,10 @@ def clear_cart(
 
 @router.post("/checkout", response_model=MessageResponseSchema)
 def checkout(
-        db: Session = Depends(get_postgresql_db),
-        token: str = Depends(get_token),
-        jwt_manager=Depends(get_jwt_auth_manager)
-):
+        db: Annotated[Session, Depends(get_postgresql_db)],
+        token: Annotated[str, Depends(get_token)],
+        jwt_manager: Annotated[JWTAuthManager, Depends(get_jwt_auth_manager)]
+) -> MessageResponseSchema:
     try:
         payload = jwt_manager.decode_access_token(token)
         user_id = payload.get("user_id")
@@ -226,10 +226,10 @@ def checkout(
 
 @router.get("/purchased", response_model=PurchasedMoviesResponse)
 def get_purchased_movies(
-        db: Session = Depends(get_postgresql_db),
-        token: str = Depends(get_token),
-        jwt_manager=Depends(get_jwt_auth_manager)
-):
+        db: Annotated[Session, Depends(get_postgresql_db)],
+        token: Annotated[str, Depends(get_token)],
+        jwt_manager: Annotated[JWTAuthManager, Depends(get_jwt_auth_manager)]
+) -> PurchasedMoviesResponse:
     try:
         payload = jwt_manager.decode_access_token(token)
         user_id = payload.get("user_id")
@@ -255,10 +255,10 @@ def get_purchased_movies(
 @router.get("/admin/{user_id}", response_model=CartResponse)
 def get_user_cart_admin(
         user_id: int,
-        db: Session = Depends(get_postgresql_db),
-        token: str = Depends(get_token),
-        jwt_manager=Depends(get_jwt_auth_manager)
-):
+        db: Annotated[Session, Depends(get_postgresql_db)],
+        token: Annotated[str, Depends(get_token)],
+        jwt_manager: Annotated[JWTAuthManager, Depends(get_jwt_auth_manager)]
+) -> CartResponse:
     try:
         payload = jwt_manager.decode_access_token(token)
         admin_id = payload.get("user_id")
@@ -289,10 +289,10 @@ def get_user_cart_admin(
 )
 def delete_movie(
         movie_id: int,
-        db: Session = Depends(get_postgresql_db),
-        token: str = Depends(get_token),
-        jwt_manager=Depends(get_jwt_auth_manager)
-):
+        db: Annotated[Session, Depends(get_postgresql_db)],
+        token: Annotated[str, Depends(get_token)],
+        jwt_manager: Annotated[JWTAuthManager, Depends(get_jwt_auth_manager)]
+) -> MessageResponseSchema:
     try:
         payload = jwt_manager.decode_access_token(token)
         user_id = payload.get("user_id")

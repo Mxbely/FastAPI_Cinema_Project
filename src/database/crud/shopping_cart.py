@@ -1,4 +1,4 @@
-from typing import List, Type
+from typing import Any, List, Optional
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -136,7 +136,7 @@ def delete_movie(db: Session, movie: Movie) -> None:
     db.commit()
 
 
-def get_purchased_movies_from_db(user: User, db: Session) -> list[Movie]:
+def get_purchased_movies_from_db(user: User, db: Session) -> list[Any]:
     return (
         db.query(Movie)
         .join(CartItem)
@@ -148,7 +148,7 @@ def get_purchased_movies_from_db(user: User, db: Session) -> list[Movie]:
     )
 
 
-def get_cart_items_details(cart) -> List[CartItemDetail]:
+def get_cart_items_details(cart: Optional[Cart]) -> List[CartItemDetail]:
     return [
         CartItemDetail(
             movie_id=item.movie.id,

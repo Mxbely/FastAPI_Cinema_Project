@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from database import Cart, CartItem, Movie, User
 
 
-def validate_movie_availability(movie: Movie):
+def validate_movie_availability(movie: Movie | None) -> None:
     if not movie:
         raise HTTPException(
             status_code=400,
@@ -12,7 +12,7 @@ def validate_movie_availability(movie: Movie):
         )
 
 
-def validate_not_purchased(user: User, movie: Movie, db: Session):
+def validate_not_purchased(user: User, movie: Movie, db: Session) -> None:
     purchased_movies = db.query(CartItem).join(Cart).filter(
         Cart.user_id == user.id,
         CartItem.movie_id == movie.id
@@ -24,7 +24,7 @@ def validate_not_purchased(user: User, movie: Movie, db: Session):
         )
 
 
-def validate_not_in_cart(user: User, movie: Movie, db: Session):
+def validate_not_in_cart(user: User, movie: Movie, db: Session) -> None:
     cart = db.query(Cart).filter(Cart.user_id == user.id).first()
     if cart:
         existing_item = db.query(CartItem).filter(
