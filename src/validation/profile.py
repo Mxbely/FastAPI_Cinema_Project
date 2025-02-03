@@ -8,7 +8,7 @@ from PIL import Image
 from database.models.accounts import GenderEnum
 
 
-def validate_name(name: str):
+def validate_name(name: str) -> None:
     if re.search(r"^[A-Za-z]*$", name) is None:
         raise ValueError(f"{name} contains non-english letters")
 
