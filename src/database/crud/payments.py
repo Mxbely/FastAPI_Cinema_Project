@@ -8,13 +8,13 @@ from database import Order, Payment, PaymentItem, PaymentStatusEnum
 from schemas import PaymentCreateSchema
 
 
-def create_payment(payment: PaymentCreateSchema, db: Session) -> Payment:
+def create_payment(payment_data: PaymentCreateSchema, db: Session) -> Payment:
     try:
         payment = Payment(
-            user_id=payment.user_id,
-            order_id=payment.order_id,
-            amount=payment.amount,
-            external_payment_id=payment.external_payment_id,
+            user_id=payment_data.user_id,
+            order_id=payment_data.order_id,
+            amount=payment_data.amount,
+            external_payment_id=payment_data.external_payment_id,
         )
         db.add(payment)
         db.commit()
@@ -54,7 +54,7 @@ def update_payment_status(
         db: Session,
 ) -> Payment | Type[Payment] | None:
     if payment:
-        payment.status = new_status.value
+        payment.status = new_status
         db.commit()
         db.refresh(payment)
     return payment
