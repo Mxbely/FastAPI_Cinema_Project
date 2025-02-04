@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, cast
+from typing import List, Optional, Type, cast, Any
 
 from sqlalchemy.orm import Session, joinedload
 
@@ -175,7 +175,7 @@ def get_or_create_directors(
 
     return directors
 
-def get_user_by_id(db: Session, user_id: int) -> User | None:
+def get_user_by_id(db: Session, user_id: str) -> User | None:
     return db.query(User).filter_by(id=user_id).first()
 
 def get_liked_movie(db: Session, movie: Movie, user: User) -> MovieLike | None:
@@ -191,3 +191,61 @@ def get_favourite_movie(db: Session, movie: Movie, user: User) -> FavoriteMovie 
             movie_id=movie.id, user_id=user.id
         ).first()
     )
+
+def create_movie_post(db: Session, movie_data: MovieCreateSchema) -> Movie:
+    certification = get_or_create_certification(db, movie_data)
+    genres = get_or_create_genres(db, movie_data)
+    stars = get_or_create_stars(db, movie_data)
+    directors = get_or_create_directors(db, movie_data)
+
+    movie = Movie(
+        name=movie_data.name,
+        year=movie_data.year,
+        time=movie_data.time,
+        imdb=movie_data.imdb,
+        votes=movie_data.votes,
+        price=movie_data.price,
+        description=movie_data.description,
+        certification_id=certification.id,
+        genres=genres,
+        stars=stars,
+        directors=directors,
+    )
+    db.add(movie)
+    db.commit()
+    db.refresh(movie)
+
+    return movie
+
+def rollback(db: Session) -> None:
+    return db.rollback()
+
+def movie_update(db: Session, movie: Movie) -> None:
+    db.commit()
+    db.refresh(movie)
+
+def delete_instance(db: Session, instance: Any) -> None:
+    db.delete(instance)
+    db.commit()
+
+def create_instance(db: Session, instance: Any) -> Any:
+    db.add(instance)
+    db.commit()
+    db.refresh(instance)
+
+    return instance
+
+def toggle_favourites_and_likes_movie(
+        db: Session,
+        value: MovieLike | FavoriteMovie
+) -> MovieLike:
+    db.add(value)
+
+    db.commit()
+    db.refresh(value)
+
+    return value
+
+def commit_instance(db: Session, movie_like: MovieLike | FavoriteMovie) -> None:
+    db.commit()
+    db.refresh(movie_like)

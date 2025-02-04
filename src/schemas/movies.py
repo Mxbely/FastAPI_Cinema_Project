@@ -151,3 +151,6 @@ class MovieSortEnum(str, enum.Enum):
     VOTES_DESC = "votes_desc"
     IMDb_ASC = "imdb_asc"
     IMDb_DESC = "imdb_desc"
+
+class DetailMessageSchema(BaseModel):
+    detail: str
