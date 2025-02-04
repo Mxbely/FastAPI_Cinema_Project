@@ -2,7 +2,8 @@ from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 
-from sqlalchemy import DECIMAL, DateTime, ForeignKey, Integer, String
+from sqlalchemy import DECIMAL, DateTime, ForeignKey, Integer, func, String
+from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.models.accounts import User
@@ -27,12 +28,13 @@ class Order(Base):
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.now
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     status: Mapped[OrderStatusEnum] = mapped_column(
-        String(50), nullable=False, default=OrderStatusEnum.PENDING.value
+        SQLAlchemyEnum(OrderStatusEnum), nullable=False, default="PENDING"
     )
     total_amount: Mapped[Decimal | None] = mapped_column(DECIMAL(10, 2))
+    stripe_url: Mapped[str | None] = mapped_column(String)
 
     order_items: Mapped[list["OrderItem"]] = relationship(
         "OrderItem", back_populates="order"
