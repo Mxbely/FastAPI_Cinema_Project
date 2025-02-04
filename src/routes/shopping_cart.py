@@ -44,7 +44,19 @@ from validation.shopping_cart import (
 router = APIRouter()
 
 
-@router.get("/", response_model=CartResponse)
+@router.get(
+    "/",
+    response_model=CartResponse,
+    summary="Retrieve user's shopping cart",
+    description=(
+        "<h3>Fetch the user's shopping cart.</h3>"
+        "Returns a list of movies currently in the user's shopping cart."
+    ),
+    responses={
+        404: {"description": "User not found."},
+        401: {"description": "Unauthorized request."}
+    }
+)
 def get_cart(
         db: Annotated[Session, Depends(get_postgresql_db)],
         token: Annotated[str, Depends(get_token)],
@@ -72,7 +84,20 @@ def get_cart(
     return CartResponse(user_id=user.id, movies=get_cart_items_details(cart))
 
 
-@router.post("/add", response_model=CartResponse)
+@router.post(
+    "/add",
+    response_model=CartResponse,
+    summary="Add a movie to the shopping cart",
+    description=(
+        "<h3>Add a movie to the user's shopping cart.</h3>"
+        "Validates availability and ensures the movie is not already in the cart."
+    ),
+    responses={
+        404: {"description": "User or movie not found."},
+        400: {"description": "Movie already in cart."},
+        401: {"description": "Unauthorized request."}
+    }
+)
 def add_to_cart(
         cart_data: CartCreate,
         db: Annotated[Session, Depends(get_postgresql_db)],
@@ -110,7 +135,19 @@ def add_to_cart(
     return CartResponse(user_id=user.id, movies=get_cart_items_details(cart))
 
 
-@router.delete("/remove/{movie_id}", response_model=CartItemResponse)
+@router.delete(
+    "/remove/{movie_id}",
+    response_model=CartItemResponse,
+    summary="Remove a movie from the shopping cart",
+    description=(
+        "<h3>Removes a specific movie from the user's shopping cart.</h3>"
+        "If the movie is not found in the cart, returns an error."
+    ),
+    responses={
+        404: {"description": "Movie or cart not found."},
+        401: {"description": "Unauthorized request."}
+    }
+)
 def remove_from_cart(
         movie_id: int,
         db: Annotated[Session, Depends(get_postgresql_db)],
@@ -145,7 +182,19 @@ def remove_from_cart(
     return CartItemResponse(message="Movie removed from cart")
 
 
-@router.delete("/clear", response_model=CartItemResponse)
+@router.delete(
+    "/clear",
+    response_model=CartItemResponse,
+    summary="Clear the shopping cart",
+    description=(
+        "<h3>Removes all movies from the shopping cart.</h3>"
+        "If the cart is already empty, returns an error."
+    ),
+    responses={
+        404: {"description": "Cart already empty."},
+        401: {"description": "Unauthorized request."}
+    }
+)
 def clear_cart(
         db: Annotated[Session, Depends(get_postgresql_db)],
         token: Annotated[str, Depends(get_token)],
@@ -176,7 +225,21 @@ def clear_cart(
     return CartItemResponse(message="Cart cleared successfully")
 
 
-@router.post("/checkout", response_model=MessageResponseSchema)
+@router.post(
+    "/checkout",
+    response_model=MessageResponseSchema,
+    summary="Checkout and complete purchase",
+    description=(
+        "<h3>Processes the purchase of items in the shopping cart.</h3>"
+        "Creates an order and clears the shopping cart."
+    ),
+    responses={
+        404: {"description": "User not found."},
+        403: {"description": "User not activated."},
+        400: {"description": "Cart is empty."},
+        401: {"description": "Unauthorized request."}
+    }
+)
 def checkout(
         db: Annotated[Session, Depends(get_postgresql_db)],
         token: Annotated[str, Depends(get_token)],
@@ -216,10 +279,24 @@ def checkout(
 
     process_order_payment_and_clear_cart(db, user, order, cart)
 
-    return MessageResponseSchema(message="Payment successful")
+    return MessageResponseSchema(
+        message="Order placed successfully. Payment has been created."
+    )
 
 
-@router.get("/purchased", response_model=PurchasedMoviesResponse)
+@router.get(
+    "/purchased",
+    response_model=PurchasedMoviesResponse,
+    summary="Retrieve purchased movies",
+    description=(
+        "<h3>Fetch a list of movies the user has purchased.</h3>"
+        "Returns a list of movie names that the user has successfully bought."
+    ),
+    responses={
+        404: {"description": "User not found."},
+        401: {"description": "Unauthorized request."}
+    }
+)
 def get_purchased_movies(
         db: Annotated[Session, Depends(get_postgresql_db)],
         token: Annotated[str, Depends(get_token)],
@@ -247,7 +324,20 @@ def get_purchased_movies(
     )
 
 
-@router.get("/admin/{user_id}", response_model=CartResponse)
+@router.get(
+    "/admin/{user_id}",
+    response_model=CartResponse,
+    summary="Retrieve a user's cart as an admin",
+    description=(
+        "<h3>Allows an admin to view a specific user's shopping cart.</h3>"
+        "Admin access is required."
+    ),
+    responses={
+        404: {"description": "User or cart not found."},
+        403: {"description": "Access denied."},
+        401: {"description": "Unauthorized request."}
+    }
+)
 def get_user_cart_admin(
         user_id: int,
         db: Annotated[Session, Depends(get_postgresql_db)],
@@ -280,7 +370,18 @@ def get_user_cart_admin(
 
 @router.delete(
     "/admin/movies/{movie_id}",
-    response_model=MessageResponseSchema
+    response_model=MessageResponseSchema,
+    summary="Delete a movie from the system",
+    description=(
+        "<h3>Allows an admin or moderator to delete a movie from the system.</h3>"
+        "If the movie is present in any user's cart, deletion is denied."
+    ),
+    responses={
+        404: {"description": "Movie not found."},
+        403: {"description": "Access denied."},
+        400: {"description": "Movie is in user carts and cannot be deleted."},
+        401: {"description": "Unauthorized request."}
+    }
 )
 def delete_movie_route(
         movie_id: int,
