@@ -279,7 +279,9 @@ def checkout(
 
     process_order_payment_and_clear_cart(db, user, order, cart)
 
-    return MessageResponseSchema(message="Payment successful")
+    return MessageResponseSchema(
+        message="Order placed successfully. Payment has been created."
+    )
 
 
 @router.get(
