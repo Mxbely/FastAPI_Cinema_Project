@@ -25,7 +25,7 @@ router = APIRouter()
     response_model=MessageResponseSchema,
     summary="Place an Order",
     description=(
-        "<h3>This endpoint allows users to place an order for the movies in their cart. "
+        "<h3>This endpoint allows users to place an order for the movies in their cart."
         "It generates a new order, creates a Stripe checkout session, "
         "and returns a success message along with the order ID.</h3>"
     ),
@@ -34,16 +34,16 @@ router = APIRouter()
             "description": "Order placed successfully.",
             "content": {
                 "application/json": {
-                    "example": {"message": "Order placed successfully, your order_id: 123"}
+                    "example": {
+                        "message": "Order placed successfully, your order_id: 123"
+                    }
                 }
             },
         },
         401: {
             "description": "Unauthorized access.",
             "content": {
-                "application/json": {
-                    "example": {"detail": "Not authenticated"}
-                }
+                "application/json": {"example": {"detail": "Not authenticated"}}
             },
         },
         500: {
@@ -107,7 +107,9 @@ def place_order(
             },
         },
         403: {
-            "description": "Forbidden. User does not have permission to view these orders.",
+            "description": (
+                "Forbidden. User does not have permission to view these orders."
+            ),
             "content": {
                 "application/json": {
                     "example": {"detail": "You don't have permission."}
@@ -117,9 +119,7 @@ def place_order(
         404: {
             "description": "No orders found.",
             "content": {
-                "application/json": {
-                    "example": {"detail": "No orders found."}
-                }
+                "application/json": {"example": {"detail": "No orders found."}}
             },
         },
     },
@@ -155,7 +155,8 @@ def get_user_orders_route(
     summary="Detail View of an Order",
     description=(
         "<h3>This endpoint retrieves detailed information about a specific order. "
-        "Admins can view any order, while regular users can only view their own orders.</h3>"
+        "Admins can view any order, while regular users can only view their own orders."
+        "</h3>"
     ),
     responses={
         200: {
@@ -180,19 +181,21 @@ def get_user_orders_route(
             },
         },
         403: {
-            "description": "Forbidden. User does not have permission to view this order.",
+            "description": (
+                "Forbidden. User does not have permission to view this order."
+            ),
             "content": {
                 "application/json": {
-                    "example": {"detail": "You don't have permission to view this order."}
+                    "example": {
+                        "detail": "You don't have permission to view this order."
+                    }
                 }
             },
         },
         404: {
             "description": "Order not found.",
             "content": {
-                "application/json": {
-                    "example": {"detail": "Order not found."}
-                }
+                "application/json": {"example": {"detail": "Order not found."}}
             },
         },
     },
