@@ -60,9 +60,13 @@ class EmailSender(EmailSenderInterface):
             logging.error(f"Failed to send email to {email}: {error}")
             raise BaseEmailError(f"Failed to send email to {email}: {error}")
 
-    def send_activation_email(self, email: str, activation_link: str) -> None:
+    def send_activation_email(
+            self, email: str, token: str, activation_link: str
+    ) -> None:
         template = self._env.get_template(self._activation_email_template_name)
-        html_content = template.render(email=email, activation_link=activation_link)
+        html_content = template.render(
+            email=email, token=token, activation_link=activation_link
+        )
 
         subject = "Account Activation"
         self._send_email(email, subject, html_content)

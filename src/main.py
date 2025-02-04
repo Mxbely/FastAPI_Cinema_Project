@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi_pagination import add_pagination
+from fastapi.middleware.cors import CORSMiddleware
 
 from routes import (
     accounts_router, movies_router, payments_router, profiles_router, orders_router
@@ -11,6 +12,14 @@ app = FastAPI(
 )
 
 api_version_prefix = "/api/v1"
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(
     accounts_router, prefix=f"{api_version_prefix}/accounts", tags=["accounts"]
