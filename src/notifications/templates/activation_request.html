@@ -1,78 +1,125 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Account Activation</title>
-  <script>
-    async function activateAccount(event) {
-      event.preventDefault();
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Account Activation</title>
+    <script>
+      async function activateAccount(event) {
+        event.preventDefault();
 
-      const email = "{{ email }}";
-      const token = "{{ token }}";
-      const activationLink = "{{ activation_link }}";
+        const email = "{{ email }}";
+        const token = "{{ token }}";
+        const activationLink = "{{ activation_link }}";
 
-      const data = {
-        email: email,
-        token: token
-      };
+        const data = {
+          email: email,
+          token: token,
+        };
 
-      const activateButton = document.getElementById("activateButton");
-      activateButton.disabled = true;
-      activateButton.textContent = "Activating...";
+        const activateButton = document.getElementById("activateButton");
+        activateButton.disabled = true;
+        activateButton.textContent = "Activating...";
 
-      try {
-        const response = await fetch(activationLink, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(data)
-        });
+        try {
+          const response = await fetch(activationLink, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
 
-        if (response.ok) {
-          alert("Account activated successfully!");
-        } else {
-          alert("Your account is already activated or the activation link is invalid.");
+          if (response.ok) {
+            alert("Account activated successfully!");
+          } else {
+            alert(
+              "Your account is already activated or the activation link is invalid.",
+            );
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          alert("An error occurred. Please try again.");
+        } finally {
+          activateButton.disabled = false;
+          activateButton.textContent = "Activate Your Account";
         }
-      } catch (error) {
-        console.error("Error:", error);
-        alert("An error occurred. Please try again.");
-      } finally {
-        activateButton.disabled = false;
-        activateButton.textContent = "Activate Your Account";
       }
-    }
-  </script>
-</head>
-<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif;">
-  <div style="border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-              padding: 20px; max-width: 480px; margin: 40px auto; background-color: #ffffff; color: #333333;">
-    <h2 style="color: #4CAF50; text-align: center; margin: 0 0 20px; font-size: 24px; font-weight: bold;">
-      Welcome to Our Platform
-    </h2>
-    <p style="margin: 10px 0; line-height: 1.6; font-size: 16px;">
-      A registration request was made using your email:
-      <strong id="email" style="color: #4CAF50;">{{ email }}</strong>.
-    </p>
-    <p style="margin: 10px 0; line-height: 1.6; font-size: 16px;">
-      To complete your registration, please click the button below:
-    </p>
-    <form onsubmit="activateAccount(event)" style="text-align: center;">
-      <button type="submit" id="activateButton" style="display: inline-block; background-color: #4CAF50; color: #ffffff;
-              text-decoration: none; font-size: 16px; padding: 10px 20px; border-radius: 4px; border: none; cursor: pointer;">
-        Activate Your Account
-      </button>
-    </form>
-    <p style="margin: 10px 0; line-height: 1.6; font-size: 16px; color: #666666;">
-      If this wasn't you, please ignore this email.
-    </p>
-    <p style="margin: 20px 0 10px; line-height: 1.6; font-size: 16px;">
-      Regards,
-    </p>
-    <p style="margin: 0; font-style: italic; font-size: 16px; color: #4CAF50;">
-      The FastAPI Team
-    </p>
-  </div>
-</body>
+    </script>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      font-family: Arial, sans-serif;
+    "
+  >
+    <div
+      style="
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        max-width: 480px;
+        margin: 40px auto;
+        background-color: #ffffff;
+        color: #333333;
+      "
+    >
+      <h2
+        style="
+          color: #4caf50;
+          text-align: center;
+          margin: 0 0 20px;
+          font-size: 24px;
+          font-weight: bold;
+        "
+      >
+        Welcome to Our Platform
+      </h2>
+      <p style="margin: 10px 0; line-height: 1.6; font-size: 16px">
+        A registration request was made using your email:
+        <strong id="email" style="color: #4caf50">{{ email }}</strong>.
+      </p>
+      <p style="margin: 10px 0; line-height: 1.6; font-size: 16px">
+        To complete your registration, please click the button below:
+      </p>
+      <form onsubmit="activateAccount(event)" style="text-align: center">
+        <button
+          type="submit"
+          id="activateButton"
+          style="
+            display: inline-block;
+            background-color: #4caf50;
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 16px;
+            padding: 10px 20px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+          "
+        >
+          Activate Your Account
+        </button>
+      </form>
+      <p
+        style="
+          margin: 10px 0;
+          line-height: 1.6;
+          font-size: 16px;
+          color: #666666;
+        "
+      >
+        If this wasn't you, please ignore this email.
+      </p>
+      <p style="margin: 20px 0 10px; line-height: 1.6; font-size: 16px">
+        Regards,
+      </p>
+      <p style="margin: 0; font-style: italic; font-size: 16px; color: #4caf50">
+        The FastAPI Team
+      </p>
+    </div>
+  </body>
 </html>
