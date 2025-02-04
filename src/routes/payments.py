@@ -78,9 +78,6 @@ def read_payments(
 ) -> Page[PaymentHistoryResponse] | MessageResponseSchema:
     user = retrieve_user_from_token(db, token, jwt_manager)
 
-    if user.group.name != UserGroupEnum.ADMIN.value:
-        return paginate(db.query(Payment).filter_by(user_id=user.id))
-
     query = db.query(Payment)
 
     if user_id:
@@ -91,6 +88,9 @@ def read_payments(
         query = query.filter(Payment.created_at <= end_date)
     if payment_status:
         query = query.filter_by(status=payment_status)
+
+    if user.group.name != UserGroupEnum.ADMIN.value:
+        return paginate(query.filter_by(user_id=user.id))
 
     return paginate(query)
 
@@ -279,7 +279,8 @@ def payment_refund(
     if order.status != OrderStatusEnum.PAID:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Order was already cancelled."
+            detail="Order was already cancelled or"
+                   " not paid, and cannot be refunded."
         )
 
     payment = db.query(Payment).filter_by(order_id=order_id).first()

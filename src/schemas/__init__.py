@@ -3,3 +3,4 @@ from schemas.payments import (
     PaymentHistoryResponse,
     PaymentSchema,
 )
+from schemas.payment_types import StripePaymentMethod
