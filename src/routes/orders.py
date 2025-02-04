@@ -20,12 +20,42 @@ from services import create_checkout_session
 router = APIRouter()
 
 
-"""
-1. Place an Order
-Endpoint: POST /orders/
-Description: Allows users to place an order for movies in their cart.
-"""
-@router.post("/orders/")
+@router.post(
+    "/orders/",
+    response_model=MessageResponseSchema,
+    summary="Place an Order",
+    description=(
+        "<h3>This endpoint allows users to place an order for the movies in their cart."
+        "It generates a new order, creates a Stripe checkout session, "
+        "and returns a success message along with the order ID.</h3>"
+    ),
+    responses={
+        200: {
+            "description": "Order placed successfully.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "Order placed successfully, your order_id: 123"
+                    }
+                }
+            },
+        },
+        401: {
+            "description": "Unauthorized access.",
+            "content": {
+                "application/json": {"example": {"detail": "Not authenticated"}}
+            },
+        },
+        500: {
+            "description": "Internal Server Error.",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Unexpected error occurred."}
+                }
+            },
+        },
+    },
+)
 def place_order(
     request: Request,
     current_user: User = Depends(get_current_user),
@@ -43,15 +73,56 @@ def place_order(
     )
 
 
-"""
-2. View User Orders (depending on whether it is an admin or a user...)
-Endpoint: GET /orders/
-Description: Retrieves a list of all orders placed by a specific user.
-"""
 @router.get(
     "/orders/",
     response_model=list[OrderItemResponseSchema],
-    status_code=status.HTTP_200_OK,
+    summary="View User Orders",
+    description=(
+        "<h3>This endpoint retrieves a list of orders placed by a user. "
+        "Admins can filter orders by user ID, date range, and status, "
+        "while regular users can only view their own orders.</h3>"
+    ),
+    responses={
+        200: {
+            "description": "List of orders retrieved successfully.",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "created_at": "2023-01-01T12:00:00",
+                            "movies": [
+                                {
+                                    "id": 1,
+                                    "name": "Movie A",
+                                    "year": 2022,
+                                    "time": 120,
+                                    "description": "A great movie.",
+                                }
+                            ],
+                            "total_amount": 19.99,
+                            "status": "completed",
+                        }
+                    ]
+                }
+            },
+        },
+        403: {
+            "description": (
+                "Forbidden. User does not have permission to view these orders."
+            ),
+            "content": {
+                "application/json": {
+                    "example": {"detail": "You don't have permission."}
+                }
+            },
+        },
+        404: {
+            "description": "No orders found.",
+            "content": {
+                "application/json": {"example": {"detail": "No orders found."}}
+            },
+        },
+    },
 )
 def get_user_orders_route(
     user_id: int | None = Query(default=None, description="Filter orders by user ID"),
@@ -78,15 +149,56 @@ def get_user_orders_route(
     return orders
 
 
-"""
-3. Detail view of order
-Endpoint: GET /orders/{order_id}/
-Description: Allows user to view details about order.
-"""
 @router.get(
     "/orders/{order_id}/",
     response_model=OrderItemResponseSchema,
-    status_code=status.HTTP_200_OK,
+    summary="Detail View of an Order",
+    description=(
+        "<h3>This endpoint retrieves detailed information about a specific order. "
+        "Admins can view any order, while regular users can only view their own orders."
+        "</h3>"
+    ),
+    responses={
+        200: {
+            "description": "Order details retrieved successfully.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "created_at": "2023-01-01T12:00:00",
+                        "movies": [
+                            {
+                                "id": 1,
+                                "name": "Movie A",
+                                "year": 2022,
+                                "time": 120,
+                                "description": "A great movie.",
+                            }
+                        ],
+                        "total_amount": 19.99,
+                        "status": "completed",
+                    }
+                }
+            },
+        },
+        403: {
+            "description": (
+                "Forbidden. User does not have permission to view this order."
+            ),
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "You don't have permission to view this order."
+                    }
+                }
+            },
+        },
+        404: {
+            "description": "Order not found.",
+            "content": {
+                "application/json": {"example": {"detail": "Order not found."}}
+            },
+        },
+    },
 )
 def get_order_detail(
     order_id: int,
