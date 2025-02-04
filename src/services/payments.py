@@ -1,3 +1,5 @@
+from typing import List, Optional
+
 import stripe
 from fastapi import Request
 from sqlalchemy.orm import Session
@@ -6,7 +8,7 @@ from config import get_settings
 from database import Order, Payment, PaymentStatusEnum
 from database.crud import create_payment, create_payment_items
 from exceptions import handle_stripe_error
-from schemas.payments import PaymentCreateSchema
+from schemas import StripePaymentMethod, PaymentCreateSchema
 
 stripe.api_key = get_settings().STRIPE_SECRET_KEY
 
@@ -15,8 +17,23 @@ def create_checkout_session(
     request: Request,
     order: Order,
     user_id: int,
-    db: Session
-) -> str | None:
+    db: Session,
+    payment_methods: Optional[List[StripePaymentMethod]] = None,
+) -> Optional[str]:
+    """
+    Creates a Stripe checkout session for a given order.
+
+    Args:
+        request (Request): The FastAPI request object.
+        order (Order): The order object containing order details.
+        user_id (int): The ID of the user making the payment.
+        db (Session): The SQLAlchemy database session.
+        payment_methods (List[StripePaymentMethod], optional): The list of
+            payment methods to be accepted. Defaults to None.
+    Returns:
+        str | None: The URL of the created Stripe checkout
+        session, or None if the session couldn't be created.
+    """
     existing_payment = db.query(Payment).filter_by(
         order_id=order.id, status=PaymentStatusEnum.PENDING.value
     ).first()
@@ -40,9 +57,13 @@ def create_checkout_session(
     if not total_amount:
         raise ValueError("Order total amount is invalid")
 
+    if not order.order_items:
+        raise ValueError("Order has no items")
+
     product_data = " ".join(
         [
-            f"{item.movie.name} x {item.price_at_order}" for item in order.order_items
+            f"|{item.movie.name} x {item.price_at_order}| "
+            for item in order.order_items
         ]
     )
 
@@ -55,8 +76,14 @@ def create_checkout_session(
     ) + "?session_id={CHECKOUT_SESSION_ID}"
 
     try:
+        if not payment_methods:
+            payment_method_types = (
+                [method.value for method in payment_methods]
+                if payment_methods else ["card"]
+            )
+
         session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
+            payment_method_types=payment_method_types,
             line_items=[
                 {
                     "price_data": {
