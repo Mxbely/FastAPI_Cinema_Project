@@ -30,7 +30,43 @@ from utils import retrieve_user_from_token
 router = APIRouter()
 
 
-@router.get("/", response_model=Page[PaymentHistoryResponse])
+@router.get(
+    "/",
+    response_model=Page[PaymentHistoryResponse],
+    summary="Read Payments",
+    description="Retrieve a paginated list of payments. "
+                "Admins can filter by user ID, start date, end date, and payment "
+                "status. Non-admin users can only view their own payments.",
+    responses={
+        200: {
+            "description": "Successful Response",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "items": [
+                            {
+                                "id": 1,
+                                "user_id": 1,
+                                "order_id": 1,
+                                "amount": 100.0,
+                                "status": "PENDING",
+                                "created_at": "2023-01-01T00:00:00",
+                                "updated_at": "2023-01-01T00:00:00"
+                            }
+                        ],
+                        "total": 1,
+                        "page": 1,
+                        "size": 50
+                    }
+                }
+            }
+        },
+        400: {"description": "Bad Request"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Not Found"},
+    },
+)
 def read_payments(
     user_id: Optional[int] = None,
     start_date: Optional[datetime] = None,
@@ -41,9 +77,6 @@ def read_payments(
     jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager)
 ) -> Page[PaymentHistoryResponse] | MessageResponseSchema:
     user = retrieve_user_from_token(db, token, jwt_manager)
-
-    if user.group.name != UserGroupEnum.ADMIN.value:
-        return paginate(db.query(Payment).filter_by(user_id=user.id))
 
     query = db.query(Payment)
 
@@ -56,10 +89,35 @@ def read_payments(
     if payment_status:
         query = query.filter_by(status=payment_status)
 
+    if user.group.name != UserGroupEnum.ADMIN.value:
+        return paginate(query.filter_by(user_id=user.id))
+
     return paginate(query)
 
 
-@router.get("/success")
+@router.get(
+    "/success",
+    response_model=MessageResponseSchema,
+    summary="Payment Success",
+    description="Handles the success of a payment session. "
+                "Verifies the session ID and updates the "
+                "payment and order status accordingly.",
+    responses={
+        200: {
+            "description": "Payment was successful",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "Payment with session_id {session_id}"
+                                   " was successful."
+                    }
+                }
+            }
+        },
+        400: {"description": "Bad Request"},
+        404: {"description": "Not Found"},
+    },
+)
 def payment_success(
     session_id: Annotated[str, Query(max_length=500)],
     db: Session = Depends(get_db),
@@ -106,7 +164,26 @@ def payment_success(
         handle_stripe_error(e)
 
 
-@router.get("/cancel")
+@router.get(
+    "/cancel",
+    summary="Cancel Payment",
+    description="Cancels a payment session by its session ID. "
+                "Updates the payment and order status accordingly.",
+    responses={
+        200: {
+            "description": "Payment was cancelled successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "Payment with session_id {session_id} was cancelled."
+                    }
+                }
+            }
+        },
+        400: {"description": "Bad Request"},
+        404: {"description": "Not Found"},
+    }
+)
 def payment_cancel(
     session_id: Annotated[str, Query(max_length=500)],
     db: Session = Depends(get_db),
@@ -162,7 +239,27 @@ def payment_cancel(
     )
 
 
-@router.post("/refund")
+@router.post(
+    "/refund",
+    response_model=MessageResponseSchema,
+    summary="Refund Payment",
+    description="Refunds a payment for a given order ID. "
+                "Updates the payment and order status accordingly.",
+    responses={
+        200: {
+            "description": "Order was refunded successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "Order with id {order_id} was refunded successfully."
+                    }
+                }
+            }
+        },
+        400: {"description": "Bad Request"},
+        404: {"description": "Not Found"},
+    }
+)
 def payment_refund(
     order_id: int,
     db: Session = Depends(get_db),
@@ -182,7 +279,8 @@ def payment_refund(
     if order.status != OrderStatusEnum.PAID:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Order was already cancelled."
+            detail="Order was already cancelled or"
+                   " not paid, and cannot be refunded."
         )
 
     payment = db.query(Payment).filter_by(order_id=order_id).first()
@@ -213,7 +311,27 @@ def payment_refund(
         handle_stripe_error(e)
 
 
-@router.post("/stripe-webhook")
+@router.post(
+    "/stripe-webhook",
+    summary="Stripe Webhook",
+    description="Handles Stripe webhook events, specifically "
+                "the `checkout.session.completed` event. "
+                "Verifies the session ID, and sends a success email.",
+    responses={
+        200: {
+            "description": "Webhook handled successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "Success"
+                    }
+                }
+            }
+        },
+        400: {"description": "Bad Request"},
+        404: {"description": "Not Found"},
+    }
+)
 async def stripe_webhook(
     request: Request,
     background_tasks: BackgroundTasks,
