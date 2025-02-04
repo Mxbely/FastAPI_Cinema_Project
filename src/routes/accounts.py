@@ -13,7 +13,7 @@ from config import (
 )
 from database import (
     UserGroupEnum,
-    get_db,
+    get_db, ActivationToken,
 )
 from database.crud.accounts import (
     create_password_reset_token_by_user_id,
@@ -30,7 +30,7 @@ from database.crud.accounts import (
     get_user_by_id,
     get_user_group_by_name, get_all_activation_tokens, remove_activation_token,
 )
-from database.session_postgresql import get_postgresql_db
+from database.session_postgresql import get_postgresql_db, PostgresqlSessionLocal
 from exceptions import BaseSecurityError
 from notifications import EmailSenderInterface
 from schemas.accounts import (
@@ -499,14 +499,3 @@ def refresh_access_token(
     new_access_token = jwt_manager.create_access_token({"user_id": user_id})
 
     return TokenRefreshResponseSchema(access_token=new_access_token)
-
-
-def remove_all_expired_activation_tokens():
-    db = next(get_postgresql_db())
-    activation_tokens = get_all_activation_tokens(db)
-    for activation_token in activation_tokens:
-        if cast(datetime, activation_token.expires_at).replace(
-            tzinfo=timezone.utc
-        ) < datetime.now(timezone.utc):
-            remove_activation_token(db=db, activation_token=activation_token.token)
-    print("Remove token completed")

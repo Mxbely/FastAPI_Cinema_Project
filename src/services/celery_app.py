@@ -1,5 +1,9 @@
 from celery import Celery
 
+from config import get_settings
+
+settings = get_settings()
+redis_url = settings.REDIS_URL
 
 celery_app = Celery(
     "celery_app",

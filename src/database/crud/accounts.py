@@ -108,7 +108,7 @@ def get_refresh_token_by_refresh_token(db: Session, refresh_token: Any) -> Query
     return db.query(RefreshToken).filter_by(token=refresh_token).first()
 
 
-def get_all_activation_tokens(db: Session):
+def get_all_activation_tokens(db: Session) -> Query:
     return db.query(ActivationToken).all()
 
 
