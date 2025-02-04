@@ -38,7 +38,7 @@ def create_checkout_session(
     total_amount = order.total_amount
 
     if not total_amount:
-        return None
+        raise ValueError("Order total amount is invalid")
 
     product_data = " ".join(
         [
