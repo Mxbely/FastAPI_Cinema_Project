@@ -13,7 +13,7 @@ from config import (
 )
 from database import (
     UserGroupEnum,
-    get_db,
+    get_db, ActivationToken,
 )
 from database.crud.accounts import (
     create_password_reset_token_by_user_id,
@@ -28,8 +28,9 @@ from database.crud.accounts import (
     get_refresh_token_by_refresh_token,
     get_user_by_email,
     get_user_by_id,
-    get_user_group_by_name,
+    get_user_group_by_name, get_all_activation_tokens, remove_activation_token,
 )
+from database.session_postgresql import get_postgresql_db, PostgresqlSessionLocal
 from exceptions import BaseSecurityError
 from notifications import EmailSenderInterface
 from schemas.accounts import (

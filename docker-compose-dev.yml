@@ -117,12 +117,62 @@ services:
     networks:
       - cinema_network
 
+  redis:
+    image: redis:alpine
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cinema_network
+
+  celery:
+    build:
+      context: .
+    command: celery -A services.celery_app worker --loglevel=info
+    volumes:
+      - celery_data:/data
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/usr/src/fastapi
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    restart: always
+    networks:
+      - cinema_network
+
+  celery-beat:
+    build:
+      context: .
+    command: celery -A services.celery_app beat --loglevel=info --scheduler celery.beat.PersistentScheduler
+    volumes:
+      - celery_data:/data
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/usr/src/fastapi
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    restart: always
+    networks:
+      - cinema_network
+
 volumes:
   postgres_cinema_data:
     driver: local
   pgadmin_cinema_data:
     driver: local
   minio_data:
+    driver: local
+  celery_data:
     driver: local
 
 networks:
