@@ -119,10 +119,12 @@ def register_user(
             detail="An error occurred during user creation.",
         )
     else:
-        activation_link = "http://127.0.0.1/accounts/activate/"
-
+        activation_link = "http://127.0.0.1:8000/api/v1/accounts/activate/"
         background_tasks.add_task(
-            email_sender.send_activation_email, new_user.email, activation_link
+            email_sender.send_activation_email,
+            new_user.email,
+            activation_token.token,
+            activation_link
         )
 
         return UserRegistrationResponseSchema.model_validate(new_user)
