@@ -124,6 +124,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - cinema_network
 
   celery:
     build:
@@ -141,6 +143,8 @@ services:
       db:
         condition: service_healthy
     restart: always
+    networks:
+      - cinema_network
 
   celery-beat:
     build:
@@ -158,6 +162,8 @@ services:
       db:
         condition: service_healthy
     restart: always
+    networks:
+      - cinema_network
 
 volumes:
   postgres_cinema_data:

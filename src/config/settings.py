@@ -37,6 +37,8 @@ class BaseAppSettings(BaseSettings):
     STRIPE_PUBLIC_KEY: str = os.environ["STRIPE_PUBLIC_KEY"]
     STRIPE_WEBHOOK_SECRET: str = os.environ["STRIPE_WEBHOOK_SECRET"]
 
+    REDIS_URL: str = os.environ["REDIS_URL"]
+
     @property
     def S3_STORAGE_ENDPOINT(self) -> str:
         return f"http://{self.S3_STORAGE_HOST}:{self.S3_STORAGE_PORT}"
